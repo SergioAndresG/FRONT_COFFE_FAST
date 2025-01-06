@@ -9,10 +9,10 @@ const formData = ref({
   id: null,
   nombre: "",
   descripcion: "",
-  categoria: "PLATO", 
-  precio_unitario: null, 
-  cantidad: null,
-  id_usuario: null
+  categoria: "COMIDA",
+  Precio: 0,
+  cantidad: 0,
+  idUsuarioR: 0
 });
 
 const handleSubmit = async () => {
@@ -22,9 +22,9 @@ const handleSubmit = async () => {
       nombre: formData.value.nombre,
       descripcion: formData.value.descripcion,
       categoria: formData.value.categoria,
-      precio_unitario: formData.value.precio_unitario,
+      precio_unitario: formData.value.Precio,
       cantidad: formData.value.cantidad,
-      id_usuario: formData.value.id_usuario,
+      id_usuario: formData.value.idUsuarioR,
       ruta_imagen: null 
 
     });
@@ -83,13 +83,13 @@ const closeModal = () => {
             <option value="BEBIDA">Bebida</option>
           </select>
           <label for="precio_unitario">Precio:</label>
-          <input type="number" id="precio_unitario" v-model.number="formData.precio_unitario" placeholder="Ingrese el precio" />
+          <input type="number" id="precio_unitario" v-model.number="formData.Precio" placeholder="Ingrese el precio" />
 
           <label for="cantidad">Cantidad:</label>
           <input type="number" id="cantidad" v-model.number="formData.cantidad" placeholder="Ingrese la cantidad" />
 
           <label for="id_usuario">ID Usuario:</label>
-          <input type="number" id="id_usuario" v-model="formData.id_usuario" placeholder="Ingrese el ID del usuario que Actualiza" required />
+          <input type="number" id="id_usuario" v-model="formData.idUsuarioR" placeholder="Ingrese el ID del usuario que Actualiza" required />
 
           <button type="submit">Actualizar</button>
         </form>

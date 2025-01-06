@@ -1,4 +1,4 @@
-<script setup lang="ts">
+  <script setup lang="ts">
 import ComImagen from './icons/IMGENES/ComImagen.vue';
 import { ref, onMounted } from 'vue';
 import axios from 'axios';

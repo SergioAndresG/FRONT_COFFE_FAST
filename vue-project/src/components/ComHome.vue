@@ -184,7 +184,6 @@ body {
   }
   .card {
     font-family: 'Jura', sans-serif;
-
     width: 180px;
     max-height: 320px;
     border-radius: 10px;
@@ -230,28 +229,29 @@ body {
     margin-left: 1px;
   }
 
-  .card:before {
-    content: '';
-    position: absolute;
-    z-index: -1;
-    top: -16px;
-    right: -16px;
-    background: linear-gradient(135deg, #70292F, #70292F);
-    height: 32px;
-    width: 32px;
-    border-radius: 32px;
-    transform: scale(1);
-    transform-origin: 50% 50%;
-    transition: transform 0.35s ease-out;
-  }
-  .card:hover:before {
-    transform: scale(28);
-  }
   .card:hover .small-desc {
     transition: all 0.5s ease-out;
     color: rgba(255, 255, 255, 0.8);
   }
   .card:hover .card-title {
+    transition: all 0.5s ease-out;
+    color: #ffffff;
+  }
+
+  .card2:hover .small-desc {
+    transition: all 0.5s ease-out;
+    color: rgba(255, 255, 255, 0.8);
+  }
+  .card2:hover .card-title {
+    transition: all 0.5s ease-out;
+    color: #ffffff;
+  }
+
+  .card3:hover .small-desc {
+    transition: all 0.5s ease-out;
+    color: rgba(255, 255, 255, 0.8);
+  }
+  .card3:hover .card-title {
     transition: all 0.5s ease-out;
     color: #ffffff;
   }

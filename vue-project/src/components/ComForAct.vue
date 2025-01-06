@@ -29,7 +29,7 @@ const handleSubmit = async () => {
 
   try {
     // Realizar la solicitud PUT al backend para actualizar el usuario
-    const response = await axios.put(`http://127.0.0.1:8000/usuarios/${formData.value.id}`, {
+      const response = await axios.put(`http://127.0.0.1:8000/usuarios/${formData.value.id}`, {
       nombre: formData.value.nombre,
       rol: formData.value.rol,
       subrol: formData.value.subrol,

@@ -76,11 +76,7 @@ const handleSubmit = async (): Promise<void> => {
         });
 
         console.log("Usuario agregado con éxito:", response.data);
-
         // Aquí asumo que tu backend devuelve la URL completa de la imagen en response.data.rutaImagen
-        alert("Usuario agregado exitosamente");
-        
-        resetForm();
         closeModal();
     } catch (error) {
         console.error("Error al agregar el usuario:", error);

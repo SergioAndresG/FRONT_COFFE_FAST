@@ -94,10 +94,8 @@ const closeModal = () => {
           <button type="submit">Actualizar</button>
         </form>
       </div>
-
-      <!-- Botón de cierre -->
-      <button @click="closeModal" class="close-btn">Cerrar</button>
     </div>
+    <button @click="closeModal" class="close-btn">X</button>
   </div>
 </template>
 
@@ -109,17 +107,21 @@ const closeModal = () => {
     font-size: 24px;
     text-align: center;
     color: #ffd700;
+    margin-top: 60px;
+    margin-left: 230px;
 
   }
   /* Estilo del formulario */
 .form-container {
-  background-color: #ffff0677; /* Fondo negro */
+  background-color: #00000077; /* Fondo negro */
   padding: 15px;
-  width: 300px;
-  margin: 0 auto;
+  width: 700px;
+  height: 460px;
+  margin-top: 40px;
   border-radius: 8px;
-  margin-top: -2px;
-  width: 400px;
+  margin-left: -10px;
+  border: 2px solid;
+
 }
 
 .form-container select{
@@ -136,6 +138,7 @@ const closeModal = () => {
 form {
   display: flex;
   flex-direction: column;
+  
 }
 
 label {
@@ -172,6 +175,8 @@ button {
   cursor: pointer;
   transition: 0.3s ease;
   font-family: 'Jura', sans-serif;
+  width: 150px;
+  margin-left: 280px;
 
 }
 
@@ -205,14 +210,15 @@ button:hover {
 }
 
 .close-btn {
-  background-color: red;
-  color: white;
+  background-color: transparent;
+  color: rgb(255, 0, 0);
   border: none;
   padding: 10px 20px;
-  margin-top: 10px;
+  margin-top: -550px;
   cursor: pointer;
   border-radius: 4px;
-  margin-top: 20px;
+  width: 60px;
+  margin-left: 120px;
 }
 
 .close-btn:hover {

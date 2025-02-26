@@ -7,6 +7,7 @@ import ComAgregarP from './ComAgregarP.vue';
 import ComActP from './ComActP.vue';
 import ComConsulPro from './ComConsulPro.vue';
 import { useRouter } from 'vue-router';
+import ComConsulProPre from './ComConsulProPre.vue';
 
 
 
@@ -69,21 +70,20 @@ const closeAdd = () => {
 cargarProductos();
 };
 
-const closeCons = () => {
-  ConsultarProducto.value = false;
-}
 
 const openCons = () => {
   ConsultarProducto.value = true;
-}
+};
+
+const closeCons = () => {
+  ConsultarProducto.value = false;
+};
+
 
 
 
 const router = useRouter();
 
-const irAConsulta = () => {
-  router.push('/ConsultarPre'); // Lo mado para la ventana emergente para preguntar 
-};
 
 
 cargarProductos();
@@ -109,12 +109,13 @@ cargarProductos();
   <div class="button-container">
     <button @click="openAdd" class="custom-button">Agregar Producto</button>
     <button @click="openAct" class="custom-button">Actualizar Producto</button>
-    <button @click="irAConsulta" class="custom-button">Consultar Producto</button>
+    <button @click="openCons" class="custom-button">Consultar Producto</button>
+
 
 
   </div>
 
-  <ComConsulPro v-if="ConsultarProducto" @close="closeCons"/>
+  <ComConsulProPre v-if="ConsultarProducto" @close="closeCons"/>
   <ComAgregarP v-if="AgregarProducto" @close="closeAdd"/>
   <ComActP v-if="ActualizarProducto" @close="closeAct"/>
 
@@ -159,7 +160,7 @@ header {
   }
   
   ul li:hover {
-    border-bottom-color: rgb(17, 0, 255);
+    border-bottom-color: rgb(231, 242, 102);
   }
 
   nav{
@@ -246,7 +247,7 @@ header {
 }
 
 .custom-button:hover {
-    background-color: #D9AB23;
+    background-color: #885b34;
 }
 
 
@@ -264,17 +265,19 @@ header {
 .card2 {
   font-family: 'Jura', sans-serif;
   width: 320px;
-  background-color: #1a1a1a;
+  background-color: #a65814ac;
   color: white;
   border-radius: 12px;
-  text-align: center;
-  padding: 15px;
+  text-align: left;
+  font-size: 14px;
+  padding: 19px;
   transition: transform 0.2s ease-in-out;
   box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+  border: 1px solid;
 }
 
 .card2:hover {
-  transform: scale(1.05);
+  transform: scale(1.10);
   border-radius: 20px;
 }
 
@@ -297,18 +300,19 @@ header {
 }
 
 .delete-button {
-  background-color: #d9ab23;
-  color: white;
+  background-color: #f3ea78;
+  color: rgb(9, 8, 8);
   border: none;
   padding: 10px 20px;
   border-radius: 5px;
   cursor: pointer;
   font-size: 16px;
   margin-top: 15px;
+  margin-left: 100px;
 }
 
 .delete-button:hover {
-  background-color: #c89a1f;
+  background-color: #deaf2e;
 }
 
 .product-name {

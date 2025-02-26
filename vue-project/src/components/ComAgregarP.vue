@@ -12,10 +12,10 @@ const formData = ref({
   cantidad: null,
   id_empleado: 0,
   categoria: "PLATO",
-  imagen: "",
-  fechaVencimiento: "",  // lo pongo como date
-  stockMinimo: null,     // lo pongo como int
-  tipo: "hecho",
+  imagen: null as File | null,
+  fechaVencimiento: "", 
+  stockMinimo: null,    
+  tipo: "HECHO",
 });
 
 
@@ -29,6 +29,7 @@ const handleImageUpload = (event: Event) => {
 
 const handleSubmit = async () => {
   try {
+    console.log("Datoa a enviar:",formData.value);
     // Validar datos antes de enviarlos
     if (
       !formData.value.nombre ||
@@ -75,25 +76,21 @@ const handleSubmit = async () => {
       icon: "success",
       title: "Producto agregado con éxito",
       text: `El producto ${response.data.nombre} fue agregado correctamente.`,
-      customClass: {
-        title: 'custom-title', // Clase para el título
-        popup: 'custom-popup', // Clase para el contenedor
-        content: 'custom-content', // Clase para el contenido
-      },
     });
 
     // Limpiar el formulario después de enviar
-    formData.value.nombre = "";
-    formData.value.descripcion = "";
-    formData.value.precioUnitario = 0;
-    formData.value.cantidad = 0;
-    formData.value.id_empleado = null;
-    formData.value.categoria = "";
-    formData.value.imagen = "";  // Limpiar la imagen también
-    formData.value.fechaVencimiento= "",
-    formData.value.stockMinimo = null,
-    formData.value.tipo = "",
-
+    formData.value = {
+      nombre: "",
+      descripcion: "",
+      precioUnitario: null,
+      cantidad: null,
+      id_empleado: 0,
+      categoria: "PLATO",
+      imagen: null,
+      fechaVencimiento: "",
+      stockMinimo: null,
+      tipo: "HECHO",
+    };
     // Cerrar el modal después de enviar
     closeModal();
   } catch (error) {
@@ -108,7 +105,6 @@ const handleSubmit = async () => {
 
 
 // Emitir evento para cerrar el modal
-import { defineEmits } from "vue";
 const emit = defineEmits(["close"]);
 const closeModal = () => {
   emit("close");
@@ -119,67 +115,54 @@ const closeModal = () => {
 <template>
   <div class="modal-overlay" @click="closeModal">
     <div class="modal-content" @click.stop>
+      <button @click="closeModal" class="close-btn">X</button> <!-- Botón fuera del formulario -->
       <h1>Agregar Producto</h1>
       <div class="form-container">
         <form @submit.prevent="handleSubmit">
 
           <div class="column">
-          <label for="nombre">Nombre:</label>
-          <input type="text" id="nombre" v-model="formData.nombre" placeholder="Ingrese el nombre del producto" required />
+            <label for="nombre">Nombre:</label>
+            <input type="text" id="nombre" v-model="formData.nombre" placeholder="Ingrese el nombre del producto" required />
 
-          <label for="cantidad">Cantidad:</label>
-          <input type="number" id="cantidad" v-model="formData.cantidad" placeholder="Ingrese la cantidad" required />
+            <label for="cantidad">Cantidad:</label>
+            <input type="number" id="cantidad" v-model="formData.cantidad" placeholder="Ingrese la cantidad" required />
 
-          
-          <label for="precio">Precio:</label>
-          <input type="number" id="precio" v-model="formData.precioUnitario" placeholder="Ingrese el precio unitario" required />
+            <label for="fechaVencimiento">Fecha de Vencimiento:</label>
+            <input type="date" id="fechaVencimiento" v-model="formData.fechaVencimiento" required />
 
-              
-          <label for="fechaVencimiento">Fecha de Vencimiento:</label>
-          <input type="date" id="fechaVencimiento" v-model="formData.fechaVencimiento" required />
+            <label for="descripcion">Descripción:</label>
+            <input type="text" id="descripcion" v-model="formData.descripcion" placeholder="Ingrese una descripción corta" required />
 
+            <label for="precio">Precio Unitario:</label>
+            <input type="number" id="precio" v-model="formData.precioUnitario" placeholder="Ingrese el precio unitario" required />
+          </div>
 
-          <label for="descripcion">Descripción:</label>
-          <input type="text" id="descripcion" v-model="formData.descripcion" placeholder="Ingrese una descripción corta" required />
-
-          <label for="precio">Precio Unitario:</label>
-          <input type="number" id="precio" v-model="formData.precioUnitario" placeholder="Ingrese el precio unitario" required />
-
-          <label for="cantidad">Cantidad:</label>
-          <input type="number" id="cantidad" v-model="formData.cantidad" placeholder="Ingrese la cantidad" required />
-
-        </div>
-        
           <div class="column">
-          <label for="idUsuario">ID Empleado:</label>
-          <input type="number" id="idEmpleado" v-model="formData.id_empleado" placeholder="Ingrese el ID del empleado que registra" required />
+            <label for="idEmpleado">ID Empleado:</label>
+            <input type="number" id="idEmpleado" v-model="formData.id_empleado" placeholder="Ingrese el ID del empleado que registra" required />
 
-          <label for="categoria">Categoría:</label>
-          <select id="categoria" v-model="formData.categoria" required>
-            <option value="PLATO">Comida</option>
-            <option value="BEBIDA">Bebida</option>
-          </select>
+            <label for="categoria">Categoría:</label>
+            <select id="categoria" v-model="formData.categoria" required>
+              <option value="PLATO">Comida</option>
+              <option value="BEBIDA">Bebida</option>
+            </select>
 
-          <label for="tipo">Tipo:</label>
-          <select id="tipo" v-model="formData.tipo" required>
-            <option value="hecho">Hecho</option>
-            <option value="comprado">Comprado</option>
-          </select>
-  
-          <label for="stockMinimo">Stock Mínimo:</label>
-          <input type="number" id="stockMinimo" v-model="formData.stockMinimo" placeholder="Ingrese el stock mínimo" required />
+            <label for="tipo">Tipo:</label>
+            <select id="tipo" v-model="formData.tipo" required>
+              <option value="HECHO">Hecho</option>
+              <option value="COMPRADO">Comprado</option>
+            </select>
 
+            <label for="stockMinimo">Stock Mínimo:</label>
+            <input type="number" id="stockMinimo" v-model="formData.stockMinimo" placeholder="Ingrese el stock mínimo" required />
 
-          <label for="imagen">Agregar imagen:</label>
-          <input type="file" id="imagen" @change="handleImageUpload">
+            <label for="imagen">Agregar imagen:</label>
+            <input type="file" id="imagen" @change="handleImageUpload">
+          </div>
 
           <button type="submit" class="agregar">Agregar</button>
-
-          <button @click="closeModal" class="close-btn">X</button>
-        </div>
         </form>
       </div>
-      
     </div>
   </div>
 </template>
@@ -245,15 +228,16 @@ select {
   background-color: #ffecb3;
   color: #000;
   padding: 10px 15px;
-  width: 150px;
+  width: 250px;
+  height: 60px;
   font-size: 14px;
   border: none;
   border-radius: 20px;
   cursor: pointer;
   transition: 0.3s ease;
   font-family: 'Jura', sans-serif;
-  margin-top: 130px;
-  margin-left: -97px;
+  margin-top: 430px;
+  margin-left: -89px;
 }
 
 .agregar:hover {
@@ -290,7 +274,7 @@ select {
   cursor: pointer;
   border-radius: 4px;
   margin-top: -600px;
-  margin-left: 270px;
+  margin-left: 780px;
   width: 450px;
   background-color:transparent;
 }

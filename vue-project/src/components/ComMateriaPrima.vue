@@ -233,6 +233,7 @@ header {
         font-size: 14px;
         cursor: pointer;
         transition: background-color 0.3s;
+        font-family: 'Jura', sans-serif;
     }
 
     .custom-button:hover {
@@ -254,17 +255,18 @@ header {
 .card2 {
   font-family: 'Jura', sans-serif;
   width: 320px;
-  background-color: #1a1a1a;
+  background-color: #955925b7;
   color: white;
   border-radius: 12px;
-  text-align: center;
+  text-align: left;
+  font-size: 14px;
   padding: 15px;
   transition: transform 0.2s ease-in-out;
   box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 .card2:hover {
-  transform: scale(1.05);
+  transform: scale(1.10);
   border-radius: 20px;
 }
 
@@ -287,8 +289,8 @@ header {
 }
 
 .delete-button {
-  background-color: #d9ab23;
-  color: white;
+  background-color: #f5d881;
+  color: rgb(0, 0, 0);
   border: none;
   padding: 10px 20px;
   border-radius: 5px;

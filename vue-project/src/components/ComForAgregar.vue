@@ -160,8 +160,8 @@ const closeModal = (): void => {
         <button type="submit">Agregar</button>
       </form>
     </div>
-    <button @click="closeModal" class="close-btn">Cerrar</button>
   </div>
+  <button @click="closeModal" class="close-btn">X</button>
 </div>
   </template>
 
@@ -178,13 +178,12 @@ const closeModal = (): void => {
   }
   /* Estilo del formulario */
 .form-container {
-  background-color: #ffff0677; /* Fondo negro */
+  background-color: #00000077; /* Fondo negro */
   padding: 15px;
-  width: 300px;
   margin: 0 auto;
   border-radius: 8px;
   margin-top: -2px;
-  width: 400px;
+  width: 600px;
 }
 
 .form-container select{
@@ -238,6 +237,8 @@ button {
   cursor: pointer;
   transition: 0.3s ease;
   font-family: 'Jura', sans-serif;
+  width: 150px;
+  margin-left: 220px;
 
 }
 
@@ -274,24 +275,27 @@ button:hover {
 
 .modal-content {
   background-color: black;
-  margin-top: -30px;
+  margin-top: 10px;
   padding: 20px;
   width: 80%;
-  height: 700px;
-  max-width: 500px;
+  height: 630px;
+  max-width: 700px;
   border-radius: 8px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  border: 2px solid;
 }
 
 .close-btn {
-  background-color: red;
+  background-color: transparent;
   color: white;
   border: none;
   padding: 10px 20px;
   margin-top: 10px;
   cursor: pointer;
   border-radius: 4px;
-  margin-top: 20px;
+  margin-top: -590px;
+  margin-right: -320px;
+  width: 90px;
 }
 
 .close-btn:hover {

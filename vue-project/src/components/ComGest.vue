@@ -329,17 +329,17 @@ body {
 .card2 {
   font-family: 'Jura', sans-serif;
   width: 320px;
-  background-color: #1a1a1a;
+  background-color: #a25d20ab;
   color: white;
   border-radius: 12px;
-  text-align: center;
+  text-align: left;
   padding: 15px;
   transition: transform 0.2s ease-in-out;
   box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 .card2:hover {
-  transform: scale(1.05);
+  transform: scale(1.10);
   border-radius: 20px;
 }
 

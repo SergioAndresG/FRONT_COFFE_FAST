@@ -1,23 +1,22 @@
 <script setup>
-import Swal from 'sweetalert2';
-import { useRouter } from 'vue-router';
+import { defineEmits } from 'vue';
 
-const router = useRouter();
+const emit = defineEmits(['close']);//lo cambio por emit para cerrar la ventana emergente de consultas por si el usuario ya no quiero consultar y oprime cerrar
 
+// Función para cosultar 
 const consultarPor = (tipo) => {
   if (tipo === 'id') {
-    router.push('/ConsultarProid'); 
-  }  if (tipo === 'nombre') {
-    router.push('/ConsultarProN'); 
-  }  if (tipo === 'cantidad') {
-    router.push('/ConsultarProC'); 
-   } else {
-    Swal.fire(`Consulta por ${tipo}`, `Aquí puedes implementar la lógica para consultar por ${tipo}.`, "info");
+    window.location.href = '/ConsultarProid';
+  } else if (tipo === 'nombre') {
+    window.location.href = '/ConsultarProN';
+  } else if (tipo === 'cantidad') {
+    window.location.href = '/ConsultarProC';
   }
 };
 
+
 const cerrarModal = () => {
-  router.push('/Productos'); 
+  emit('close'); 
 };
 </script>
 

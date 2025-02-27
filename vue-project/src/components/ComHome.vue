@@ -1,4 +1,8 @@
 <script setup lang="ts">
+<<<<<<< HEAD
+=======
+import ComNosImg from './icons/IMGENES/ComNosImg.vue';
+>>>>>>> master
 import ComImagen from './icons/IMGENES/ComImagen.vue';
 import ComInicioImg from './icons/IMGENES/ComInicioImg.vue';
 </script>
@@ -9,8 +13,13 @@ import ComInicioImg from './icons/IMGENES/ComInicioImg.vue';
       <ComImagen/>
       <div class="menu-hamburguesa" id="menu-hamburguesa">
         <ul class="menu">
+<<<<<<< HEAD
           <li><router-link to="/Nos">Nosotros</router-link></li>
           <li><router-link to="/Inicio">Iniciar Sesión</router-link></li>
+=======
+          <li><router-link to="/Menu">Menu</router-link></li>
+          <li><router-link to="/Sesion">Iniciar Sesión</router-link></li>
+>>>>>>> master
         </ul>
       </div>
     </nav>
@@ -43,10 +52,68 @@ import ComInicioImg from './icons/IMGENES/ComInicioImg.vue';
         </p>
         <hr id="car">
     </div>
+<<<<<<< HEAD
+=======
+
+  <div class="nosotros-banner">
+      <h2>Nosotros</h2>
+  </div>
+
+
+  <div class="contenedor5">
+      <p id="text4">En Coffee Bike nos apasiona brindar una experiencia única en cada taza. Desde el primer sorbo hasta el último, queremos que disfrutes del auténtico sabor del café recién molido, cuidadosamente seleccionado de los mejores cultivos. Nuestro espacio ha sido diseñado para que te sientas como en casa, ya sea que vengas a trabajar, relajarte o compartir momentos especiales.
+        Además del café, ofrecemos una amplia variedad de bebidas artesanales, postres irresistibles y opciones ligeras para cualquier momento del día. Todo preparado con ingredientes frescos y mucho cariño.</p>
+    </div>
+
+
+  <div id="container-text-2">
+    <h1 id="nuestro">NUESTRA HISTORIA</h1>
+    <p id="Coffe-text">Coffee Bike nació del sueño de compartir momentos únicos a través del café. Todo comenzó con una pequeña máquina de espresso y una gran pasión por descubrir los mejores granos del mundo. Inspirados por el aroma y la magia que cada taza puede ofrecer, decidimos crear un espacio donde el café no solo se disfrute, sino que también se sienta.  Gracias a nuestros clientes, cada taza que servimos es un testimonio de amistad, tradición y amor por el café. ¡Esta historia apenas comienza, y queremos que seas parte de ella! </p>
+  </div>
+
+
+  <ComNosImg/>
+
+  <div class="card-flip">
+    <div class="card-item">
+      <div class="card-front" :style="{ backgroundImage: 'url(https://i.postimg.cc/k5Lnzfkd/Whats-App-Image-2024-11-22-at-5-15-44-PM.jpg)' }">
+      </div>
+      <div class="card-back">
+        <p class="small-desc">
+          Tomar riesgos es la piedra angular de los imperios
+        </p>
+      </div>
+    </div>
+    
+    <div class="card-item">
+      <div class="card-front" :style="{ backgroundImage: 'url(https://i.postimg.cc/k5Lnzfkd/Whats-App-Image-2024-11-22-at-5-15-44-PM.jpg)' }">
+        <!-- Imagen de fondo -->
+      </div>
+      <div class="card-back">
+        <p class="small-desc">
+          ¡Explora nuevas posibilidades con facilidad!
+        </p>
+      </div>
+    </div>
+    
+    <div class="card-item">
+      <div class="card-front" :style="{ backgroundImage: 'url(https://i.postimg.cc/k5Lnzfkd/Whats-App-Image-2024-11-22-at-5-15-44-PM.jpg)' }">
+        <!-- Imagen de fondo -->
+      </div>
+      <div class="card-back">
+        <p class="small-desc">
+          ¡Innovación al alcance de tu mano!
+        </p>
+      </div>
+    </div>
+  </div>
+
+>>>>>>> master
   
     <footer>
       <p>&copy; 2024 </p>
       
+<<<<<<< HEAD
   <ul class="wrapper">
     <li class="icon facebook">
       <span class="tooltip">Facebook</span>
@@ -80,6 +147,13 @@ import ComInicioImg from './icons/IMGENES/ComInicioImg.vue';
 </li>
 
     <li class="icon instagram">
+=======
+       
+      <ul class="wrapper">
+    <a href="https://www.instagram.com/de_lonuestro?igsh=MXU3NTQ4cGY4cXI2ZA==" target="_blank" rel="noopener noreferrer">
+
+  <li class="icon instagram">
+>>>>>>> master
       <span class="tooltip">Instagram</span>
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -92,8 +166,15 @@ import ComInicioImg from './icons/IMGENES/ComInicioImg.vue';
           d="M8 0C5.829 0 5.556.01 4.703.048 3.85.088 3.269.222 2.76.42a3.917 3.917 0 0 0-1.417.923A3.927 3.927 0 0 0 .42 2.76C.222 3.268.087 3.85.048 4.7.01 5.555 0 5.827 0 8.001c0 2.172.01 2.444.048 3.297.04.852.174 1.433.372 1.942.205.526.478.972.923 1.417.444.445.89.719 1.416.923.51.198 1.09.333 1.942.372C5.555 15.99 5.827 16 8 16s2.444-.01 3.298-.048c.851-.04 1.434-.174 1.943-.372a3.916 3.916 0 0 0 1.416-.923c.445-.445.718-.891.923-1.417.197-.509.332-1.09.372-1.942C15.99 10.445 16 10.173 16 8s-.01-2.445-.048-3.299c-.04-.851-.175-1.433-.372-1.941a3.926 3.926 0 0 0-.923-1.417A3.911 3.911 0 0 0 13.24.42c-.51-.198-1.092-.333-1.943-.372C10.443.01 10.172 0 7.998 0h.003zm-.717 1.442h.718c2.136 0 2.389.007 3.232.046.78.035 1.204.166 1.486.275.373.145.64.319.92.599.28.28.453.546.598.92.11.281.24.705.275 1.485.039.843.047 1.096.047 3.231s-.008 2.389-.047 3.232c-.035.78-.166 1.203-.275 1.485a2.47 2.47 0 0 1-.599.919c-.28.28-.546.453-.92.598-.28.11-.704.24-1.485.276-.843.038-1.096.047-3.232.047s-2.39-.009-3.233-.047c-.78-.036-1.203-.166-1.485-.276a2.478 2.478 0 0 1-.92-.598 2.48 2.48 0 0 1-.6-.92c-.109-.281-.24-.705-.275-1.485-.038-.843-.046-1.096-.046-3.233 0-2.136.008-2.388.046-3.231.036-.78.166-1.204.276-1.486.145-.373.319-.64.599-.92.28-.28.546-.453.92-.598.282-.11.705-.24 1.485-.276.738-.034 1.024-.044 2.515-.045v.002zm4.988 1.328a.96.96 0 1 0 0 1.92.96.96 0 0 0 0-1.92zm-4.27 1.122a4.109 4.109 0 1 0 0 8.217 4.109 4.109 0 0 0 0-8.217zm0 1.441a2.667 2.667 0 1 1 0 5.334 2.667 2.667 0 0 1 0-5.334z"
         ></path>
       </svg>
+<<<<<<< HEAD
     </li>
   </ul>
+=======
+  </li>
+</a>
+
+</ul>  
+>>>>>>> master
   
   </footer>
 </template>
@@ -103,11 +184,20 @@ import ComInicioImg from './icons/IMGENES/ComInicioImg.vue';
 body {
     font-family: 'Jura', sans-serif;
     font-weight: normal;
+<<<<<<< HEAD
     color: black; /* Cambiado aquí */
+=======
+  background-color: black; /* Fondo negro */
+
+>>>>>>> master
 }
   
   header {
     padding: 20px;
+<<<<<<< HEAD
+=======
+    background-color: #000000;
+>>>>>>> master
   }
   
 
@@ -163,11 +253,27 @@ body {
   hr {
     border-top: 2px solid #D9AB23; /* Ajusta el grosor y color según tus necesidades */
     margin: 20px 0; /* Ajusta el margen superior e inferior */
+<<<<<<< HEAD
     margin-top: 54px;
     width: 1300px;
     margin-left: 7%;
   }
   
+=======
+    margin-top: 64px;
+    width: 1300px;
+    margin-left: 7%;
+  }
+
+
+  #hr1 {
+    border-top: 2px solid #D9AB23; /* Ajusta el grosor y color según tus necesidades */
+    margin: 20px 0; /* Ajusta el margen superior e inferior */
+    margin-top: 6px;
+    width: 1300px;
+    margin-left: 7%;
+  }
+>>>>>>> master
   #l2 {
     margin-top: 10px;
     width: 800px;
@@ -190,7 +296,10 @@ body {
     margin-left: 850px;
     font-size: 23px;
     margin-top: -20px;
+<<<<<<< HEAD
 
+=======
+>>>>>>> master
   }
 
   .card-title {
@@ -208,7 +317,10 @@ body {
   }
   .card {
     font-family: 'Jura', sans-serif;
+<<<<<<< HEAD
 
+=======
+>>>>>>> master
     width: 180px;
     max-height: 320px;
     border-radius: 10px;
@@ -254,6 +366,7 @@ body {
     margin-left: 1px;
   }
 
+<<<<<<< HEAD
   .card:before {
     content: '';
     position: absolute;
@@ -271,6 +384,8 @@ body {
   .card:hover:before {
     transform: scale(28);
   }
+=======
+>>>>>>> master
   .card:hover .small-desc {
     transition: all 0.5s ease-out;
     color: rgba(255, 255, 255, 0.8);
@@ -279,6 +394,147 @@ body {
     transition: all 0.5s ease-out;
     color: #ffffff;
   }
+<<<<<<< HEAD
+=======
+
+  .card2:hover .small-desc {
+    transition: all 0.5s ease-out;
+    color: rgba(255, 255, 255, 0.8);
+  }
+  .card2:hover .card-title {
+    transition: all 0.5s ease-out;
+    color: #ffffff;
+  }
+
+  .card3:hover .small-desc {
+    transition: all 0.5s ease-out;
+    color: rgba(255, 255, 255, 0.8);
+  }
+  .card3:hover .card-title {
+    transition: all 0.5s ease-out;
+    color: #ffffff;
+  }
+
+  
+
+
+
+  #text4{
+    font-family: 'Jura', sans-serif;
+    font-size: 23px;
+    margin-top: 50px;
+    width: 990px;
+
+  }
+
+  .nosotros-banner {
+  width: 100%;
+  background-color: #d9ab23be;
+  text-align: center;
+  padding: 10px 0;
+  border: 1px solid;
+  margin-top: 65px;
+}
+
+.nosotros-banner h2 {
+  font-family: 'Jura', sans-serif;
+  margin: 0;
+  font-size: 24px;
+  color: #ffffff;
+}
+
+.contenedor5 {
+  height: 100vh; /* Ocupa toda la ventana */
+  background-image: url("https://i.postimg.cc/k5Lnzfkd/Whats-App-Image-2024-11-22-at-5-15-44-PM.jpg");
+  background-size: cover; /* La imagen cubre todo el contenedor */
+  background-position: center; /* Centra la imagen */
+  background-attachment: fixed; /* Imagen fija */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: white;
+  text-align: center;
+  height: 380px;
+}
+
+
+/* Estilo para el resto del contenido */
+#container-text,
+#container-text-2 {
+  padding: 2rem;
+  line-height: 1.6;
+}
+
+
+  #container-text-2{
+    width: 700px;
+    margin-left: 123px;
+    text-align: center;
+  }
+
+  #nuestro{
+    color: #D9AB23;
+    font-family: 'Jura', sans-serif;
+    margin-left: 40px;
+  }
+
+  #Coffe-text{
+    font-family: 'Jura', sans-serif;
+    font-size: 20px;
+    margin-top: 20px;
+    margin-left: 20px;
+  }
+
+  .card-flip {
+  display: flex;
+  justify-content: space-around;
+  gap: 20px;
+}
+
+.card-item {
+  margin-left: -30px;
+  width: 300px;
+  height: 300px;
+  perspective: 1000px; /* Esto da el efecto de profundidad al voltear */
+}
+
+.card-front, .card-back {
+  width: 100%;
+  height: 100%;
+  backface-visibility: hidden; /* Esto asegura que la parte de atrás no sea visible cuando esté volteada */
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 10px;
+  border-radius: 10px;
+  transition: transform 0.6s; /* Añade una transición suave al voltear */
+}
+
+.card-front {
+  background-size: cover;
+  background-position: center;
+}
+
+.card-back {
+  background-color: #fefdae;
+  font-family: 'Jura', sans-serif;
+  font-size: 30px;
+  transform: rotateY(180deg); /* Voltea la parte de atrás */
+}
+
+.card-item:hover .card-front {
+  transform: rotateY(180deg); /* Voltea la parte delantera cuando el mouse está sobre la carta */
+}
+
+.card-item:hover .card-back {
+  transform: rotateY(0); /* Muestra la parte trasera cuando el mouse está sobre la carta */
+}
+
+>>>>>>> master
   
   footer {
       padding: 20px;

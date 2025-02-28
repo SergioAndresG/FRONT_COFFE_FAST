@@ -9,19 +9,29 @@ import ComConsulPro from './ComConsulPro.vue';
 
 
 const productos = ref([]);
+const empleado = ref([]);
 
+const cargarEmpleados = async () => {
+  try {
+    const empleados = await axios.get("http://127.0.0.1:8000/empleados");
+    empleado.value = empleados.data; // Asignamos los datos del empleado
+  } catch (error) {
+    console.error("Error al obtner la contraseña del Jefe")
+    
+  }
+}
 
 const cargarProductos = async () => {
   try {
-    const respuesta = await axios.get("http://127.0.0.1:8000/productos"); // Ajusta la URL según tu backend
+    const respuesta = await axios.get("http://127.0.0.1:8000/productos"); 
     productos.value = respuesta.data; // Asigna los datos de la respuesta
   } catch (error) {
     console.error("Error al cargar productos:", error);
   }
 };
 
-
-const contraseñaProporcionada = "126";
+cargarEmpleados();
+const contraseñaProporcionada = empleado;
 
 const eliminarProducto = async (idProducto: number) => {
   try {
@@ -36,10 +46,16 @@ const eliminarProducto = async (idProducto: number) => {
       data: eliminarProductoDTO,  // Enviar el DTO en el cuerpo de la solicitud
     });
 
-    console.log("Producto eliminado con éxito", response.data);
+    Swal.fire({
+      title: "Eliminado con exito",
+      icon: "success"
+    });
     cargarProductos();
   } catch (error) {
-    console.error("Error al eliminar el producto:", error);
+    Swal.fire({
+      title: "Error al elminar el Producto",
+      icon: "error"
+    })
   }
 };
 
@@ -85,8 +101,6 @@ cargarProductos();
       <ComImagen />
       <ul>
         <li><router-link to="/">HOME</router-link></li>
-        <li><a href="/Inicio">Empleados</a></li>
-        <li><a href="/Inicio">Administradores</a></li>
       </ul>
     </nav>
   </header>
@@ -109,16 +123,16 @@ cargarProductos();
   <div class="product-container">
   <div class="card2" v-for="producto in productos" :key="producto.id">
     <div class="product-image">
-      <img v-if="producto.ruta_imagen" :src="`http://127.0.0.1:8000/${producto.ruta_imagen}`" class="product-image" />
+      <img v-if="producto.ruta_imagen" :src="`http://127.0.0.1:8000/productos/${producto.ruta_imagen}`" class="product-image" />
         <span v-else>{{ producto.imagen }}</span>
     </div>
     <p>ID: <span class="product-id">{{ producto.id }}</span></p>
     <div class="product-info">
       <p>Nombre: <span class="product-name">{{ producto.nombre }}</span></p>
-      <p>Descripción: <span class="product-description">{{ producto.descripcion }}</span></p>
       <p>Cantidad: <span class="product-quantity">{{ producto.cantidad }}</span></p>
       <p>Precio: <span class="product-price">${{ producto.precio_unitario }}</span></p>
       <p>Categoría: <span class="product-price">{{ producto.categoria }}</span></p>
+      <p>Tipo: <span class="product-type">{{ producto.tipo }}</span></p>
     </div>
     <div class="product-buttons">
       <button class="delete-button" @click="eliminarProducto(producto.id)">
@@ -271,7 +285,7 @@ header {
   height: 150px;
   border-radius: 10%;
   overflow: hidden;
-  margin-left: 10%;
+  margin-left: 15%;
 }
 
 .product-image img {

@@ -7,12 +7,13 @@ import Swal from "sweetalert2";  // Asegúrate de importar SweetAlert2
 // Form data
 const formData = ref({
   nombre: "",
-  descripcion: "",
   precioUnitario: null,
   cantidad: null,
+  stock_minimo: null,
   id_usuario: 0,
   categoria: "PLATO",
-  imagen: "",
+  imagen:null,
+  tipo: ""
 });
 
 
@@ -29,7 +30,6 @@ const handleSubmit = async () => {
     // Validar datos antes de enviarlos
     if (
       !formData.value.nombre ||
-      !formData.value.descripcion ||
       formData.value.precioUnitario === null ||
       formData.value.cantidad === null
     ) {
@@ -44,11 +44,12 @@ const handleSubmit = async () => {
     // Crear un objeto FormData para enviar tanto los datos como la imagen
     const form = new FormData();
     form.append("nombre", formData.value.nombre);
-    form.append("descripcion", formData.value.descripcion);
+    form.append("stock_minimo", formData.value.stock_minimo.toString());
     form.append("precio_unitario", formData.value.precioUnitario.toString());
     form.append("cantidad", formData.value.cantidad.toString());
     form.append("id_usuario", formData.value.id_usuario.toString());
     form.append("categoria", formData.value.categoria);
+    form.append("tipo", formData.value.tipo);
 
     // Si hay una imagen, añadirla a la solicitud
     if (formData.value.imagen instanceof File) {
@@ -66,21 +67,16 @@ const handleSubmit = async () => {
       icon: "success",
       title: "Producto agregado con éxito",
       text: `El producto ${response.data.nombre} fue agregado correctamente.`,
-      customClass: {
-        title: 'custom-title', // Clase para el título
-        popup: 'custom-popup', // Clase para el contenedor
-        content: 'custom-content', // Clase para el contenido
-      },
     });
 
     // Limpiar el formulario después de enviar
     formData.value.nombre = "";
-    formData.value.descripcion = "";
-    formData.value.precioUnitario = 0;
+    formData.value.stock_minimo = 0;
+    formData.value.precioUnitario = null;
     formData.value.cantidad = 0;
     formData.value.id_usuario = null;
     formData.value.categoria = "";
-    formData.value.imagen = "";  // Limpiar la imagen también
+    formData.value.imagen = null  // Limpiar la imagen también
 
     // Cerrar el modal después de enviar
     closeModal();
@@ -113,8 +109,8 @@ const closeModal = () => {
           <label for="nombre">Nombre:</label>
           <input type="text" id="nombre" v-model="formData.nombre" placeholder="Ingrese el nombre del producto" required />
 
-          <label for="descripcion">Descripción:</label>
-          <input type="text" id="descripcion" v-model="formData.descripcion" placeholder="Ingrese una descripción corta" required />
+          <label for="descripcion">Stock Minimo:</label>
+          <input type="text" id="stock_minimo" v-model="formData.stock_minimo" placeholder="Numero minimo de productos (Para enviar alerta)" required />
 
           <label for="precio">Precio Unitario:</label>
           <input type="number" id="precio" v-model="formData.precioUnitario" placeholder="Ingrese el precio unitario" required />
@@ -123,6 +119,12 @@ const closeModal = () => {
           <select id="categoria" v-model="formData.categoria" required>
             <option value="PLATO">Comida</option>
             <option value="BEBIDA">Bebida</option>
+          </select>
+
+          <label for="tipo">Tipo:</label>
+          <select id="tipo" v-model="formData.tipo" required>
+            <option value="COMPRADO">Comprado</option>
+            <option value="HECHO">Hecho</option>
           </select>
 
           <label for="cantidad">Cantidad:</label>

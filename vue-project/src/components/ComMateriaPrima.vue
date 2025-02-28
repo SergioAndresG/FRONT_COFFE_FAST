@@ -23,7 +23,7 @@ cargarProductos();
 const eliminarMateria = async (idMateria: number) => {
   try {
     // Realizar la solicitud DELETE al backend enviando solo el ID en el cuerpo de la solicitud
-    const response = await axios.delete(`http://localhost:8080/materia/${idMateria}`);
+    const response = await axios.delete(`http://localhost:8000/materia/${idMateria}`);
 
     console.log("Materia eliminada con éxito", response.data);
 
@@ -92,10 +92,10 @@ cargarProductos();
     <p>ID: <span class="product-id">{{ producto.id }}</span></p>
     <div class="product-info">
       <p>Nombre: <span class="product-name">{{ producto.nombre }}</span></p>
-      <p>Descripción: <span class="product-description">{{ producto.descripcion }}</span></p>
+      <p>Unidad de Medida: <span class="product-description">{{ producto.unidad_medida }}</span></p>
       <p>Cantidad: <span class="product-quantity">{{ producto.cantidad }}</span></p>
-      <p>Precio: <span class="product-price">${{ producto.precio_unitario }}</span></p>
-      <p>Categoría: <span class="product-price">{{ producto.categoria }}</span></p>
+      <p>Fecha Ingreso: <span class="product-price">{{ producto.fecha_ingreso }}</span></p>
+      <p>Fecha Vencimineto: <span class="product-price">{{ producto.fecha_vencimiento }}</span></p>
     </div>
     <div class="product-buttons">
       <button class="delete-button" @click="(producto.id)">

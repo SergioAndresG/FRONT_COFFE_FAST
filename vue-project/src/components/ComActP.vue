@@ -7,10 +7,10 @@ const isModalOpen = ref(false);
 
 const formData = ref({
   id: null,
+  stock_minimo: 0,
   nombre: "",
-  descripcion: "",
   categoria: "COMIDA",
-  Precio: 0,
+  precio: 0,
   cantidad: 0,
   idUsuarioR: 0
 });
@@ -20,13 +20,12 @@ const handleSubmit = async () => {
     // Enviar los datos del formulario al backend usando PUT
     const response = await axios.put(`http://127.0.0.1:8000/productos/${formData.value.id}`, {
       nombre: formData.value.nombre,
-      descripcion: formData.value.descripcion,
+      stock_minimo: formData.value.stock_minimo,
       categoria: formData.value.categoria,
-      precio_unitario: formData.value.Precio,
+      precio_unitario: formData.value.precio,
       cantidad: formData.value.cantidad,
       id_usuario: formData.value.idUsuarioR,
       ruta_imagen: null 
-
     });
 
     // Mensaje de éxito al actualizar el producto
@@ -45,6 +44,8 @@ const handleSubmit = async () => {
       title: "Error al actualizar el producto",
       text: "Hubo un problema al actualizar el producto. Intenta nuevamente.",
     });
+    closeModal();
+
   }
 };
 
@@ -63,7 +64,7 @@ const closeModal = () => {
       <h1>Actualizar Producto</h1>
       <div class="form-container">
         <form @submit.prevent="handleSubmit">
-          <label for="id">ID del Usuario:</label>
+          <label for="id">ID del Producto:</label>
             <input
               type="number"
               id="id"
@@ -74,8 +75,8 @@ const closeModal = () => {
           <label for="nombre">Nombre:</label>
           <input type="text" id="nombre" v-model="formData.nombre" placeholder="Ingrese el nombre del producto" />
 
-          <label for="descripcion">Descripción:</label>
-          <input type="text" id="descripcion" v-model="formData.descripcion" placeholder="Ingrese una descripción corta" />
+          <label for="stock_minimo">Stock minimo:</label>
+          <input type="number" id="stock_minimo" v-model="formData.stock_minimo" placeholder="Numero minimo de productos (Para enviar alerta)"/>
 
           <label for="categoria">Categoría:</label>
           <select id="categoria" v-model="formData.categoria" required>
@@ -83,7 +84,7 @@ const closeModal = () => {
             <option value="BEBIDA">Bebida</option>
           </select>
           <label for="precio_unitario">Precio:</label>
-          <input type="number" id="precio_unitario" v-model.number="formData.Precio" placeholder="Ingrese el precio" />
+          <input type="number" id="precio_unitario" v-model.number="formData.precio" placeholder="Ingrese el precio" />
 
           <label for="cantidad">Cantidad:</label>
           <input type="number" id="cantidad" v-model.number="formData.cantidad" placeholder="Ingrese la cantidad" />

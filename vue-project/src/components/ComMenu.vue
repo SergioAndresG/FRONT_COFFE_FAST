@@ -2,16 +2,66 @@
 import { ref } from 'vue';
 import ComImagen from './icons/IMGENES/ComImagen.vue';
 import Swal from "sweetalert2";  // Asegúrate de importar SweetAlert2
+import axios from 'axios';
 
 interface Producto {
+  id: number;
   nombre: string;
   precio: number;
   imagen: string;
   cantidad: number; // Agregar campo cantidad
+  detalle_factura: null;
+}
+
+const Compras = async () => {
+  if (carrito.value.length == 0){
+    Swal.fire({
+      icon: "warning",
+      title:"No hay productos en el carrito",
+    });
+    return
+  }
+  const produtosCantidad = conversorParaBackend();
+
+
+  try {
+    // Hacemos la soliitud al backend
+    const response = await axios.post(
+      "http://127.0.0.1:8000/comprar",
+      produtosCantidad
+    )
+
+    Swal.fire({
+      icon: "success",
+      title: "Compra exitosa"
+    });
+    carrito.value = []; // Vacia el contenido del carrito
+  } catch (error) {
+    Swal.fire({
+      icon: "error",
+      title: "No se pudo completar la compra",
+      text: error.response?.data?.detail || "Error no esperado"
+    })
+  }
 }
 
 // Ejemplo de los datos o interfaz de los productos
-const carrito = ref<Producto[]>([]);
+const carrito = ref<Producto[]>([]);  
+
+const conversorParaBackend = async () =>{
+  // Creamos un Objeto para almcenar loes resultaddos
+    const productosCompra: Record<number, number> = {}
+      // Iteramos sobre cada producto del carrito
+    carrito.value.forEach((producto) => {
+      // Usar el id de clave y la cantidad como valor
+      productosCompra[producto.id] = producto.cantidad
+    });
+    return productosCompra
+
+}
+
+
+
 const mostrarModal = ref(false);
 const compraExitosa = ref(false);
 
@@ -21,6 +71,8 @@ const agregarAlCarrito = (event: MouseEvent) => {
   const nombre = carta.querySelector('.carta-titulo')?.textContent || '';
   const precio = parseFloat(carta.querySelector('.carta-descripcion')?.textContent?.replace('$', '').replace('.', '') || '0');
   const imagen = (carta.querySelector('.carta-imagen') as HTMLImageElement).src;
+
+  const id = parseInt(carta.getAttribute('data-id') || '0');
 
   const productoExistente = carrito.value.find(p => p.nombre === nombre);
   if (productoExistente) {
@@ -37,6 +89,8 @@ const agregarAlCarrito = (event: MouseEvent) => {
   });
 };
   
+
+
 
 // Función para aumentar la cantidad
 const incrementarCantidad = (index: number) => {
@@ -55,16 +109,6 @@ const disminuirCantidad = (index: number) => {
 // Eliminar producto del carrito
 const eliminarProducto = (index: number) => {
   carrito.value.splice(index, 1);
-};
-
-// Función para comprar los productos
-const comprarProductos = () => {
-  if (carrito.value.length > 0) {
-    compraExitosa.value = true; // Indicar que la compra fue exitosa
-    carrito.value = []; // Vaciar el carrito después de la compra
-  } else {
-    alert('No hay productos en el carrito para comprar');
-  }
 };
 
 // Función para abrir el carrito (al hacer clic en el ícono del carrito)
@@ -184,7 +228,7 @@ window.addEventListener("scroll", () => {
           </li>
         </ul>
 
-        <button @click="comprarProductos" class="boton-comprar">Comprar</button>
+        <button @click="Compras" class="boton-comprar">Comprar</button>
         <button @click="cerrarCarrito" class="boton-cerrar">Cerrar</button>
       </div>
     </div>
@@ -199,7 +243,7 @@ window.addEventListener("scroll", () => {
     <hr id="l1">
 
   <div id="cartas-contenedor">
-    <div class="carta">
+    <div class="carta" >
       <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTXzf81glE2WSVF-jF6Vu7T1C3tNIhyTFzNSQ&s" alt="Amasijo 1" class="carta-imagen" />
       <h3 class="carta-titulo">Almojabana</h3>
       <p class="carta-descripcion">$2.500</p>
@@ -257,13 +301,13 @@ window.addEventListener("scroll", () => {
       <button @click="agregarAlCarrito($event)">Agregar al carrito</button>
     </div>
     <div class="carta">
-      <img src="https://olimpica.vtexassets.com/arquivos/ids/1396336-800-450?v=638500183806700000&width=800&height=450&aspect=true" alt="Amasijo 3" class="carta-imagen" />
+      <img src="https://tse3.mm.bing.net/th?id=OIP.2nXm3RYNffPsHS40m6_fZAHaHa&pid=Api&P=0&h=180" alt="Amasijo 3" class="carta-imagen" />
       <h3 class="carta-titulo">Coca Cola 400ml</h3>
       <p class="carta-descripcion">3.500</p>
       <button @click="agregarAlCarrito($event)">Agregar al carrito</button>
     </div>
     <div class="carta">
-      <img src="https://olimpica.vtexassets.com/arquivos/ids/1490745/7702535011119_1.jpg?v=638629879339700000" alt="Amasijo 4" class="carta-imagen" />
+      <img src="https://tse3.mm.bing.net/th?id=OIP.EX_g-S7ZaWw2e4WcVCWUXgHaHa&pid=Api&P=0&h=180" alt="Amasijo 4" class="carta-imagen" />
       <h3 class="carta-titulo">Coca Cola zero 400ml</h3>
       <p class="carta-descripcion">$3.500</p>
       <button @click="agregarAlCarrito($event)">Agregar al carrito</button>
@@ -355,7 +399,7 @@ window.addEventListener("scroll", () => {
       <p class="carta-descripcion">$3.000</p>
       <button @click="agregarAlCarrito($event)">Agregar al carrito</button>
     </div>
-    <div class="carta">
+    <div class="carta" data-id="1">
       <img src="https://estaticos.elcolombiano.com/documents/10157/0/792x565/6c0/780d565/none/11101/MYGE/image_content_26048298_20160519204438.jpg" alt="Amasijo 3" class="carta-imagen" />
       <h3 class="carta-titulo">Tinto</h3>
       <p class="carta-descripcion">2.300</p>

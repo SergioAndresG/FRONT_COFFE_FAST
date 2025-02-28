@@ -46,7 +46,7 @@
     }
   
     try {
-      const respuesta = await axios.get(`http://127.0.0.1:8000/usuarios/${idEmpleado.value}`); // Endpoint ajustado
+      const respuesta = await axios.get(`http://127.0.0.1:8000/usuarios/${idEmpleado.value}`);
       empleado.value = respuesta.data; // Asigna los datos del empleado
     } catch (error) {
       console.error("Error al consultar empleado:", error);
@@ -56,8 +56,6 @@
   };
   
 
-
-  
 import { defineEmits } from 'vue';
 
 const emit = defineEmits(['close']); // Emitir el evento 'close'
@@ -65,7 +63,6 @@ const emit = defineEmits(['close']); // Emitir el evento 'close'
 const closeModal = () => {
   emit('close');  // Emitir el evento para cerrar el modal
 };
-
   </script>
   
   <style scoped>

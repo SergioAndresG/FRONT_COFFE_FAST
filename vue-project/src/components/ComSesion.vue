@@ -18,9 +18,6 @@ const validarUsuario = async () => {
       contraseña: contraseña.value,
     });
 
-    // Si la respuesta es exitosa, muestra el mensaje de bienvenida
-    successMessage.value = respuesta.data.mensaje;
-
     // Aquí se valida el rol y se redirige a la página correspondiente
     const rol = respuesta.data.rol;  // El rol que llega del backend
 

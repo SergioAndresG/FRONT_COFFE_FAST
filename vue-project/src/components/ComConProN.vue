@@ -4,27 +4,33 @@
 import { ref } from 'vue';
 import axios from 'axios';
 import { useRouter } from 'vue-router';
+import Swal from 'sweetalert2';
 
 const router = useRouter();
 
 // Propiedades reactivas
-const nombreProducto = ref(''); 
+const nombreProducto = ref(""); 
 const producto = ref(null); // Almacena los datos del producto
 
 //funcion para consultar el producto por nombre
 const handleSubmit = async () => {
-  if (!nombreProducto.value.trim()) {  
+  if (!nombreProducto.value) {  
     alert("Por favor, ingresa un nombre válido.");
     return;
   }
 
+  producto.value = null
+
   try {
-    const respuesta = await axios.get(`http://127.0.0.1:8000/productos/${encodeURIComponent(nombreProducto.value)}`);
-    producto.value = respuesta.data; 
+    const respuesta = await axios.get(`http://127.0.0.1:8000/productos/consulta-nombre/${nombreProducto.value}`);
+    producto.value = respuesta.data;
   } catch (error) {
-    console.error("Error al consultar producto:", error);
-    alert("Producto no encontrado o error en la consulta.");
-    producto.value = null; 
+    console.error(nombreProducto.value, "Error al consultar producto:", error);
+    producto.value = null;
+    Swal.fire({
+      title: "Producto no encontrado o error en la consulta",
+      icon: "error"
+    }) 
   }
 };
 
@@ -50,17 +56,19 @@ const cerrarModal = () => {
           />
           <button type="submit">Consultar</button>
         </form>
-
-        <div v-if="producto" id="container">
-          <h3>Información del Producto</h3>
-          <p><strong>ID:</strong> {{ producto.id }}</p>
-          <p><strong>Nombre:</strong> {{ producto.nombre }}</p>
-          <p><strong>Cantidad:</strong> {{ producto.cantidad }}</p>
-          <p><strong>Precio unidad:</strong> {{ producto.precio_unitario }}</p>
-        </div>
+        <transition name="fade-expand">
+          <div v-if="producto" id="container">
+            <h3>Información del Producto</h3>
+            <p><strong>ID:</strong> {{ producto.id }}</p>
+            <p><strong>Nombre:</strong> {{ producto.nombre }}</p>
+            <p><strong>Cantidad:</strong> {{ producto.cantidad }}</p>
+            <p><strong>Precio:</strong> {{ producto.precio_unitario }}</p>
+          </div>
+        </transition>
       </div>
 
-          <img src="@/components/icons/IMGENES/breads-1867459_1280.jpg" alt="Producto" class="imagen" />
+        <img v-if="producto && producto.ruta_imagen" :src="`http://127.0.0.1:8000/productos/${producto.ruta_imagen}`" alt="Producto" class="imagen"  />
+          <img v-else src="@/components/icons/IMGENES/breads-1867459_1280.jpg" alt="Producto" class="imagen" />
       </div>
     <button class="close-btn" @click="cerrarModal">X</button>
   </div>
@@ -103,11 +111,12 @@ form {
   padding: 20px;
   margin-top: 20px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-  text-align: left;
   width: 460px;
-  height: 190px;
   margin-left: auto;
   margin-right: auto;
+  border-radius: 8px;
+  text-align: center;
+  font-family: 'Jura', sans-serif;
 }
 
 label {
@@ -197,28 +206,38 @@ button:hover {
   background-color: darkred;
 }
 
-#container{
-    text-align: center;
-    font-family: 'Jura', sans-serif;
-}
-
 .imagen {
   display: flex;
   width: 420px; 
   height: 420px;
   border-radius: 50%;
-  object-fit: cover; 
+  object-fit:cover; 
   margin-left: 700px;
   margin-top: -200px;
   transform: translateY(-50%);
+  transition: opacity 0.5s ease-in-out;
 }
-
 
 .image-container img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
   border-radius: 8px;
 }
 
+/*Animacion para expandir el contenedor */
+.fade-expand-enter-active, .fade-expand-leave-active {
+  transition: max-height 0.5s ease-out, opacity 0.3s ease-in-out;
+  overflow: hidden;
+}
+
+.fade-expand-enter-from, .fade-expand-leave-to {
+  max-height: 0;
+  opacity: o;
+}
+
+.fade-expand-enter-to, .fade-expand-leave-from {
+  max-height: 250px;
+  opacity: 1;
+
+}
   </style>

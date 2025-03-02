@@ -84,6 +84,7 @@ button {
   font-family: 'Jura', sans-serif;
   color: rgb(0, 0, 0);
   padding: 10px;
+  margin: 7px;
   font-size: 14px;
   border: none;
   border-radius: 5px;
@@ -93,11 +94,18 @@ button {
 
 button:hover {
   background-color: #ffcc00;
+  transform: scale(1.02);
+
 }
 
 .close-btn {
   margin-top: 15px;
   background-color: red;
   color: white;
+}
+
+.close-btn:hover {
+  transform: scale(1.02);
+  background-color: rgb(112, 5, 5);
 }
 </style>

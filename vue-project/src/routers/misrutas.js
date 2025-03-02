@@ -1,8 +1,3 @@
-<<<<<<< HEAD
-import ComHome from "@/components/ComHome.vue";
-import { createRouter, createWebHistory } from "vue-router";
-
-=======
 import ComAdmi from "@/components/ComAdmi.vue";
 import ComConsulProPre from "@/components/ComConsulProPre.vue";
 import ComConsulPro from "@/components/ComConsulPro.vue";
@@ -27,15 +22,13 @@ import ComSesion from "@/components/ComSesion.vue";
 import SnowFall from "@/components/SnowFall.vue";
 import { createRouter, createWebHistory } from "vue-router";
 import ComConProC from "@/components/ComConProC.vue";
->>>>>>> master
+import Comnew from "@/components/comnew.vue";
 
 const routes = [
     {
         path: "/",
         name: "Home",
         component: ComHome
-<<<<<<< HEAD
-=======
     },
     {
         path: "/Nosotros",
@@ -148,7 +141,11 @@ const routes = [
         path: "/ConsultarProC",
         name: "ConsultarProC",
         component: ComConProC
->>>>>>> master
+    },
+    {
+        path:"/new",
+        name: "/new",
+        component: Comnew
     }
 ]
 

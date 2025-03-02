@@ -11,39 +11,79 @@ import ComConsulProPre from './ComConsulProPre.vue';
 
 
 
-const productos = ref([]);
 
+const productos = ref([]);
+const empleado = ref([]);
+const contraseñaProporcionada = ref("");
+
+const cargarEmpleados = async () => {
+  try {
+    const empleados = await axios.get("http://127.0.0.1:8000/usuarios");
+    empleado.value = empleados.data; // Asignamos los datos del empleado
+
+    // Se busca el usuario con el rol de Jefe
+    const jefe = empleado.value.find(e=>e.rol==="JEFE")
+    if (jefe) {
+      contraseñaProporcionada.value = jefe.contraseña // Se guarda solo la contraseña
+    } else {
+      console.error("No se encontro al jefe")
+    }
+  } catch (error) {
+    console.error("Error al obtner la contraseña del Jefe")
+    
+  }
+}
 
 const cargarProductos = async () => {
   try {
-    const respuesta = await axios.get("http://127.0.0.1:8000/productos"); // Ajusta la URL según tu backend
+    const respuesta = await axios.get("http://127.0.0.1:8000/productos"); 
     productos.value = respuesta.data; // Asigna los datos de la respuesta
   } catch (error) {
     console.error("Error al cargar productos:", error);
   }
 };
 
-
-const contraseñaProporcionada = "126";
+cargarEmpleados();
 
 const eliminarProducto = async (idProducto: number) => {
   try {
+
+    if(!contraseñaProporcionada){
+      console.error("no se encontro la contraseña del jefe");
+      return;
+    }
+
     // Crear el DTO con los datos necesarios
     const eliminarProductoDTO = {
       idProductoaEliminar: idProducto, // Usar el id pasado al método
-      contraseñaProporcionada: contraseñaProporcionada,  // Usar la contraseña del jefe
+      contraseñaProporcionada: String(contraseñaProporcionada.value),  // Usar la contraseña del jefe
     };
+
+    console.log(eliminarProductoDTO)
+  console.log(typeof idProducto)
+  console.log(typeof contraseñaProporcionada)
 
     // Realizar la solicitud DELETE al backend
     const response = await axios.delete("http://127.0.0.1:8000/productos/eliminar", {
       data: eliminarProductoDTO,  // Enviar el DTO en el cuerpo de la solicitud
+      headers: {
+        "Content-Type": "application/json"
+      }
     });
 
-    console.log("Producto eliminado con éxito", response.data);
+    Swal.fire({
+      title: "Eliminado con exito",
+      icon: "success"
+    });
     cargarProductos();
   } catch (error) {
-    console.error("Error al eliminar el producto:", error);
+    Swal.fire({
+      title: "Error al elminar el Producto",
+      icon: "error",
+      
+    })
   }
+
 };
 
 
@@ -70,23 +110,16 @@ const closeAdd = () => {
 cargarProductos();
 };
 
+const closeCons = () => {
+  ConsultarProducto.value = false;
+}
 
 const openCons = () => {
   ConsultarProducto.value = true;
-};
-
-const closeCons = () => {
-  ConsultarProducto.value = false;
-};
-
-
-
-
-const router = useRouter();
-
-
+}
 
 cargarProductos();
+
 
 </script>
 
@@ -122,7 +155,7 @@ cargarProductos();
   <div class="product-container">
   <div class="card2" v-for="producto in productos" :key="producto.id">
     <div class="product-image">
-      <img v-if="producto.ruta_imagen" :src="`http://127.0.0.1:8000/${producto.ruta_imagen}`" class="product-image" />
+      <img v-if="producto.ruta_imagen" :src="`http://127.0.0.1:8000/productos/${producto.ruta_imagen}`" class="product-image" />
         <span v-else>{{ producto.imagen }}</span>
     </div>
     <p>ID: <span class="product-id">{{ producto.id }}</span></p>
@@ -257,8 +290,8 @@ header {
   margin-top: 70px;
   display: grid;
   grid-template-columns: repeat(3, 1fr); /* Tres columnas */
-  gap: 20px; /* Espacio entre los productos */
-  padding: 20px; /* Margen interno */
+  gap: 40px; /* Espacio entre los productos */
+  padding: 28px; /* Margen interno */
   justify-content: center; /* Centrar el contenido horizontalmente */
 }
 
@@ -277,7 +310,7 @@ header {
 }
 
 .card2:hover {
-  transform: scale(1.10);
+  transform: scale(1.04);
   border-radius: 20px;
 }
 

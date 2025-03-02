@@ -11,7 +11,7 @@ const productos = ref([]);
 
 const cargarProductos = async () => {
   try {
-    const respuesta = await axios.get("http://127.0.0.1:8000/materia"); // Ajusta la URL según tu backend
+    const respuesta = await axios.get("http://127.0.0.1:8000/materia");
     productos.value = respuesta.data; // Asigna los datos de la respuesta
   } catch (error) {
     console.error("Error al cargar productos:", error);

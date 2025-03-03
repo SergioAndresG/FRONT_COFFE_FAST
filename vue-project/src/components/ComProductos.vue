@@ -161,7 +161,7 @@ cargarProductos();
     <p>ID: <span class="product-id">{{ producto.id }}</span></p>
     <div class="product-info">
       <p>Nombre: <span class="product-name">{{ producto.nombre }}</span></p>
-      <p>Descripción: <span class="product-description">{{ producto.descripcion }}</span></p>
+      <p>Tipo: <span class="product-description">{{ producto.tipo }}</span></p>
       <p>Cantidad: <span class="product-quantity">{{ producto.cantidad }}</span></p>
       <p>Precio: <span class="product-price">${{ producto.precio_unitario }}</span></p>
       <p>Categoría: <span class="product-price">{{ producto.categoria }}</span></p>

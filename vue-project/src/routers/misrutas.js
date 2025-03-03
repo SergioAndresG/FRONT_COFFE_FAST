@@ -22,7 +22,6 @@ import ComSesion from "@/components/ComSesion.vue";
 import SnowFall from "@/components/SnowFall.vue";
 import { createRouter, createWebHistory } from "vue-router";
 import ComConProC from "@/components/ComConProC.vue";
-import Comnew from "@/components/comnew.vue";
 
 const routes = [
     {
@@ -142,11 +141,6 @@ const routes = [
         name: "ConsultarProC",
         component: ComConProC
     },
-    {
-        path:"/new",
-        name: "/new",
-        component: Comnew
-    }
 ]
 
 const router = createRouter({

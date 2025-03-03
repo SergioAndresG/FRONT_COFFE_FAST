@@ -238,6 +238,5 @@ button:hover {
 .fade-expand-enter-to, .fade-expand-leave-from {
   max-height: 250px;
   opacity: 1;
-
 }
   </style>

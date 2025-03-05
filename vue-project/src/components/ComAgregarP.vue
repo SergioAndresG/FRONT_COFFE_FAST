@@ -22,7 +22,7 @@ const formData = ref({
   categoria: "PLATO",
   imagen: null as File | null,
   stockMinimo: null,    
-  tipo: "HECHO",
+  tipo: "COMPRADO",
   ingredientes: [] as {id: number; nombre: string; cantidad: number; unidad: string; imagen?: string}[],
 });
 
@@ -86,11 +86,18 @@ const openCantidadModal = (ingrediente) => {
   cantidadIngrediente.value = null;
   selectedUnidad.value = null;
   showCantidadModal.value = true;
+  // Usamos esto para evitar scroll en el body principal
+  document.documentElement.style.overflow = "hidden";
+  document.documentElement.style.height = "100hv";
 };
 
 const closeCantidadModal = () => {
   showCantidadModal.value = false;
+  document.body.classList.remove("no-scroll");
   currentIngrediente.value = null;
+  // Restaurtamos el scroll en el body principal
+  document.documentElement.style.overflow = "";
+  document.documentElement.style.height = "";
 };
 
 const agregarIngrediente = () => {
@@ -150,7 +157,7 @@ const eliminarIngrediente = (index: number) => {
     icon: "warning",
     showCancelButton: true,
     confirmButtonColor: "#d33",
-    cancelButtonColor: "#3085d6",
+    cancelButtonColor: "#ffd700",
     confirmButtonText: "Sí, eliminar",
     cancelButtonText: "Cancelar"
   }).then((result) => {
@@ -247,7 +254,7 @@ const handleSubmit = async () => {
       categoria: "PLATO",
       imagen: null,
       stockMinimo: null,
-      tipo: "HECHO",
+      tipo: "COMPRADO",
       ingredientes: []
     };
     
@@ -273,6 +280,7 @@ const closeModal = () => {
 
 
 <template>
+<transition name="fade2">
   <div class="modal-overlay" @click="closeModal">
     <div class="modal-content" @click.stop>
       <button @click="closeModal" class="close-btn">X</button> <!-- Botón fuera del formulario -->
@@ -307,7 +315,7 @@ const closeModal = () => {
               <option value="HECHO">Hecho</option>
               <option value="COMPRADO">Comprado</option>
             </select>
-           <Transition class="fade-expand">
+           <transition class="fade-expand">
                 <div v-if="formData.tipo === 'HECHO'" class="ingredientes-button-container">
                    <button type="button" @click="openIngredientesModal" class="btn-agregar-receta">
                        Agregar/Editar Receta
@@ -316,7 +324,7 @@ const closeModal = () => {
                         {{ formData.ingredientes.length }} ingredientes agregados
                   </span>
                 </div>
-            </Transition>
+            </transition>
             
 
             <label for="stockMinimo">Stock Mínimo:</label>
@@ -327,141 +335,135 @@ const closeModal = () => {
           </div>
 
           <button type="submit" class="agregar">Agregar</button>
-
-
         </form>
         
           <!-- Modal de ingredientes -->
+        <transition name="fade2">
           <div v-if="showIngredientesModal" class="ingredientes-modal-overlay">
-    <div class="ingredientes-modal">
-      <div class="modal-header">
-        <h2>Seleccione ingredientes para la receta</h2>
-        <button @click="closeIngredientesModal" class="close-btn">X</button>
-      </div>
-
-      <div class="search-container">
-        <input 
-          type="text" 
-          v-model="searchTerm" 
-          placeholder="Buscar ingredientes..." 
-          class="search-input"
-        >
-      </div>
-
-      <!-- Lista de ingredientes ya agregados -->
-      <div v-if="formData.ingredientes.length > 0" class="added-ingredients">
-        <h3>Ingredientes en la receta</h3>
-        <table>
-          <thead>
-            <tr>
-              <th>Ingrediente</th>
-              <th>Cantidad</th>
-              <th>Unidad</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="(ing, idx) in formData.ingredientes" :key="idx">
-              <td class="ingredient-name">
-                <img 
-                  v-if="ing.imagen" 
-                  :src="ing.imagen" 
-                  alt="Imagen de ingrediente" 
-                  class="ingredient-thumbnail"
+            <div class="ingredientes-modal">
+              <div class="modal-header">
+                <button @click="closeIngredientesModal" class="close-btn3">X</button>
+                <h2>Seleccione ingredientes para la receta</h2>
+              </div>
+              <div class="search-container">
+                <input 
+                  type="text" 
+                  v-model="searchTerm" 
+                  placeholder="Buscar ingredientes..." 
+                  class="search-input"
                 >
-                {{ ing.nombre }}
-              </td>
-              <td>{{ ing.cantidad }}</td>
-              <td>{{ ing.unidad }}</td>
-              <td>
-                <button @click="openCantidadModal(ing)" class="btn-edit">Editar</button>
-                <button @click="eliminarIngrediente(idx)" class="btn-delete">Eliminar</button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+              </div>
 
-      <div class="ingredientes-grid">
-        <div 
-          v-for="ingrediente in filteredIngredientes" 
-          :key="ingrediente.id" 
-          class="ingrediente-card"
-        >
-          <div class="ingrediente-imagen">
-            <img v-if="ingredientes.ruta_imagen" :src="`http://127.0.0.1:8000/productos/${producto.ruta_imagen}`" />
+              <!-- Lista de ingredientes ya agregados -->
+              <div v-if="formData.ingredientes.length > 0" class="added-ingredients">
+                <h3>Ingredientes en la receta</h3>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Ingrediente</th>
+                      <th>Cantidad</th>
+                      <th>Unidad</th>
+                      <th>Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="(ing, idx) in formData.ingredientes" :key="idx">
+                      <td class="ingredient-name">
+                        <img 
+                          v-if="ing.imagen" 
+                          :src="ing.imagen" 
+                          alt="Imagen de ingrediente" 
+                          class="ingredient-image"
+                        >
+                        {{ ing.nombre }}
+                      </td>
+                      <td>{{ ing.cantidad }}</td>
+                      <td>{{ ing.unidad }}</td>
+                      <td>
+                        <button @click="openCantidadModal(ing)" class="btn-edit">Editar</button>
+                        <button @click="eliminarIngrediente(idx)" class="btn-delete">Eliminar</button>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="ingredientes-grid">
+                <div v-for="ingrediente in filteredIngredientes" :key="ingrediente.id" class="ingrediente-card">
+                  <div class="ingrediente-imagen">
+                    <img v-if="ingrediente.ruta_imagen" :src="`http://127.0.0.1:8000/productos/${ingrediente.ruta_imagen}`" />
+                  </div>
+                  <div class="ingrediente-info">
+                    <h4>{{ ingrediente.nombre }}</h4>
+                    <p v-if="ingrediente.cantidad">Stock: {{ ingrediente.cantidad }}</p>
+                  </div>
+                  <button 
+                    @click="openCantidadModal(ingrediente)" 
+                    class="btn-agregar-ingrediente">Agregar</button>
+                </div>
+              </div>
+
+              <div v-if="filteredIngredientes.length === 0" class="no-results">
+                No se encontraron ingredientes que coincidan con la búsqueda.
+              </div>
+
+              <div class="modal-footer">
+                <button @click="closeIngredientesModal" class="btn-finalizar">Finalizar</button>
+              </div>
+            </div>
           </div>
-          <div class="ingrediente-info">
-            <h4>{{ ingrediente.nombre }}</h4>
-            <p v-if="ingrediente.stock">Stock: {{ ingrediente.stock }}</p>
+        </transition>
+
+          
+        <!-- Modal para cantidad y unidad -->
+        <div v-if="showCantidadModal" class="cantidad-modal-overlay" @click="closeCantidadModal">
+          <div class="cantidad-modal" @click.stop>
+            <div class="modal-header">
+              <button @click="closeCantidadModal" class="close-btn2">X</button>
+
+              <h3>Agregar {{ currentIngrediente?.nombre }}</h3>
+            </div>
+
+            <div class="cantidad-form">
+              <div class="form-group">
+                <label for="cantidad">Cantidad:</label>
+                <input 
+                  type="number" 
+                  id="cantidad" 
+                  v-model="cantidadIngrediente" 
+                  placeholder="Ej: 250" 
+                  min="0.01" 
+                  step="0.01"
+                  class="cantidad-input"
+                  autofocus
+                >
+              </div>
+
+              <div class="form-group">
+                <label for="unidad">Unidad de medida:</label>
+                <select id="unidad" v-model="selectedUnidad" class="unidad-select">
+                  <option value="" disabled selected>Seleccione una unidad</option>
+                  <option v-for="unidad in unidades" :key="unidad.id" :value="unidad.simbolo">
+                    {{ unidad.nombre }} ({{ unidad.simbolo }})
+                  </option>
+                </select>
+              </div>
+            </div>
+
+            <div class="modal-footer">
+              <button @click="closeCantidadModal" class="btn-cancelar">Cancelar</button>
+              <button @click="agregarIngrediente" class="btn-confirmar">Confirmar</button>
+            </div>
           </div>
-          <button 
-            @click="openCantidadModal(ingrediente)" 
-            class="btn-agregar-ingrediente"
-          >
-            Agregar
-          </button>
         </div>
-      </div>
-
-      <div v-if="filteredIngredientes.length === 0" class="no-results">
-        No se encontraron ingredientes que coincidan con la búsqueda.
-      </div>
-
-      <div class="modal-footer">
-        <button @click="closeIngredientesModal" class="btn-finalizar">Finalizar</button>
       </div>
     </div>
   </div>
+</transition>
 
-  <!-- Modal para cantidad y unidad -->
-  <div v-if="showCantidadModal" class="cantidad-modal-overlay" @click="closeCantidadModal">
-    <div class="cantidad-modal" @click.stop>
-      <div class="modal-header">
-        <h3>Agregar {{ currentIngrediente?.nombre }}</h3>
-        <button @click="closeCantidadModal" class="close-btn">X</button>
-      </div>
-
-      <div class="cantidad-form">
-        <div class="form-group">
-          <label for="cantidad">Cantidad:</label>
-          <input 
-            type="number" 
-            id="cantidad" 
-            v-model="cantidadIngrediente" 
-            placeholder="Ej: 250" 
-            min="0.01" 
-            step="0.01"
-            class="cantidad-input"
-            autofocus
-          >
-        </div>
-
-        <div class="form-group">
-          <label for="unidad">Unidad de medida:</label>
-          <select id="unidad" v-model="selectedUnidad" class="unidad-select">
-            <option value="" disabled selected>Seleccione una unidad</option>
-            <option v-for="unidad in unidades" :key="unidad.id" :value="unidad.simbolo">
-              {{ unidad.nombre }} ({{ unidad.simbolo }})
-            </option>
-          </select>
-        </div>
-      </div>
-
-      <div class="modal-footer">
-        <button @click="closeCantidadModal" class="btn-cancelar">Cancelar</button>
-        <button @click="agregarIngrediente" class="btn-confirmar">Confirmar</button>
-      </div>
-    </div>
-  </div>
-      </div>
-    </div>
-  </div>
 </template>
 
 <style scoped>
-
-
 h1 {
   font-family: 'Jura', sans-serif;
   font-size: 24px;
@@ -552,7 +554,6 @@ select {
   justify-content: center;
   align-items: center;
   z-index: 1000;
-  transition: all 0.3s ease; /* Transición suave */
 }
 
 .modal-content {
@@ -583,20 +584,55 @@ select {
   transform: scale(1.1);
 }
 
+.ingredientes-modal-overlay{
+  text-align: center;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+}
+.close-btn2 {
+  color: rgb(247, 247, 247);
+  border: none;
+  padding: 10px 20px;
+  cursor: pointer;
+  border-radius: 4px;
+  margin-left: 380px;
+  margin-top: 22px;
+  width: 50px;
+  background-color: red;
+  transition: 0.3s ease;
+}
+.close-btn3 {
+  color: rgb(247, 247, 247);
+  border: none;
+  padding: 10px 20px;
+  cursor: pointer;
+  border-radius: 4px;
+  margin-left: 730px;
+  margin-top: 22px;
+  width: 50px;
+  background-color: red;
+  transition: 0.3s ease;
+}
+.close-btn2:hover, .close-btn3:hover {
+  background-color: #cf0000;
+  transform: scale(1.1);
+}
 .ingredientes-modal{
   font-family: 'Jura', sans-serif;
   position: fixed;
-  top: 20%;
-  left: 20%;
-  width: 60%;
-  height: 70%;
+  left: 10%;
+  width: 80%;
+  height: 100%;
   background-color: rgb(0, 0, 0);
-  justify-content: center;
-  align-items: center;
   z-index: 1100;
   transition: all 0.3s ease;
   border: solid #cf9b00;
-  border-radius: 15%;
+  border-radius: 5%;
+  overflow-y: auto; /* Activa el scroll vertical */
 }
 
 .cerrar-ingredientes {
@@ -654,6 +690,244 @@ select {
 
 }
 
+.added-ingredients {
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid #eee;
+}
+
+.added-ingredients table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 0.5rem;
+}
+
+.added-ingredients th, .added-ingredients td {
+  padding: 0.6rem;
+  text-align: left;
+  border-bottom: 1px solid #eee;
+}
+
+.ingredient-name {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 12px;
+}
+
+.ingredient-image {
+  width: 30px;
+  height: 30px;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+.btn-edit, .btn-delete {
+  padding: 0.3rem 0.6rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  margin-right: 0.3rem;
+  transition: transform 0.2s ease-in-out;
+}
+
+.btn-edit {
+  background-color: #FFC107;
+  color: #333;
+}
+
+.btn-delete {
+  background-color: #c3382f;
+  color: white;   
+}
+
+.btn-edit:hover{
+  transform: translateY(-3px);
+  background-color: #ffe100;
+}
+
+.btn-delete:hover{
+  transform: translateY(-3px);
+  background-color: #cf0000;
+}
+/*Estilos del contenedor de ingredientes */
+.ingredientes-grid{
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1rem;
+  padding: 1.5rem;
+  overflow-y: auto;
+}
+
+.ingrediente-card {
+  border: 1px solid #eee;
+  border-radius: 8px;
+  overflow: hidden;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.ingrediente-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.ingrediente-imagen {
+  height: 120px;
+  overflow: hidden;
+}
+
+.ingrediente-imagen img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s;
+}
+
+.ingrediente-card:hover .ingrediente-imagen img {
+  transform: scale(1.05);
+}
+
+.ingrediente-info {
+  padding: 0.8rem;
+}
+
+.ingrediente-info h4 {
+  margin: 0 0 0.5rem;
+  font-size: 1rem;
+}
+
+.ingrediente-info p {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #666;
+}
+
+.btn-agregar-ingrediente {
+  width: 100%;
+  padding: 0.6rem;
+  background-color: #ffd700;
+  color: white;
+  border: none;
+  cursor: pointer;
+  transition: transform ease-in-out 0.3s;
+}
+
+.btn-agregar-ingrediente:hover {
+  background-color: #cf9b00;
+  transform: scale(1.1);
+}
+
+.no-results {
+  padding: 2rem;
+  text-align: center;
+  color: #666;
+  font-style: italic;
+}
+
+.btn-finalizar {
+  background-color: #de0a0a;
+  color: white;
+  padding: 0.6rem 1.2rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: transform 0.3s ease-in-out;
+
+}
+
+.btn-finalizar:hover{
+  transform: scale(1.1);
+}
+
+/* Modal de cantidad */
+.modal-header h3{
+  font-family: 'Jura', sans-serif;
+  text-align: center;
+}
+
+.cantidad-modal-overlay {
+  position: fixed;
+  width: 110%;
+  height: 110%;
+  background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(3px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: -130px;
+  margin-left: -40px;
+  z-index: 1200;
+}
+
+.cantidad-modal {
+  background-color: rgb(0, 0, 0);
+  border-radius: 8px;
+  width: 450px;
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+  border: solid 1px #fff;
+  margin-left: -63px;
+}
+
+.cantidad-modal input{
+  width: 374px;
+}
+
+.cantidad-form {
+  padding: 1.5rem;
+}
+
+.form-group {
+  margin-bottom: 1.2rem;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: bold;
+}
+
+.cantidad-input, .unidad-select {
+  width: 100%;
+  padding: 0.8rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 1rem;
+}
+
+.modal-footer {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid #eee;
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.8rem;
+}
+.btn-cancelar {
+  padding: 0.6rem 1.2rem;
+  background-color: #ff0000;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: 'Jura', sans-serif;
+  transition: transform 0.2s ease-in-out;
+}
+.btn-confirmar {
+  font-family: 'Jura', sans-serif;
+  padding: 0.6rem 1.2rem;
+  background-color: #FFC107;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: transform 0.2s ease-in-out;
+}
+
+.btn-cancelar:hover,.btn-confirmar:hover{
+  transform: scale(1.1);
+}
+
 /*Animacion para expandir el contenedor */
 .fade-expand-enter-active, .fade-expand-leave-active {
   transition: max-height 2s ease-out, opacity 1s ease-in-out;
@@ -669,6 +943,22 @@ select {
   max-height: 250px;
   opacity: 1;
 }
+
+
+.fade2-enter-active, .fade2-leave-active {
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.fade2-enter-from, .fade2-leave-to {
+  opacity: 0;
+  transform: scale(0.9); /* Efecto de zoom al aparecer */
+  
+}
+
+.fade2-leave-to{
+  transform: translateY(-50px);
+}
+
 .ingrediente{
   margin-left: 38px;
 }

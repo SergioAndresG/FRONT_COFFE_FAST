@@ -113,6 +113,7 @@ const ConsultarProducto = ref(false);
 const openEmergente = (producto) => {
   emergenteMasInformacion.value = true; // Gurada el producto seleccionado
   productoSeleccionado.value = producto; // Para la informacion del producto selecionado
+
 }
 
 const closeEmergente = () => {
@@ -121,29 +122,47 @@ const closeEmergente = () => {
 
 const openAct = () => {
   ActualizarProducto.value = true;
+   // Usamos esto para evitar scroll en el body principal
+   document.documentElement.style.overflow = "hidden";
+  document.documentElement.style.height = "100hv";
 }
 
 const closeAct = () => {
   ActualizarProducto.value = false;
+  // Restaurtamos el scroll en el body principal
+  document.documentElement.style.overflow = "";
+  document.documentElement.style.height = "";
 cargarProductos();
 
 }
 
 const openAdd = () => {
   AgregarProducto.value = true;
+  // Usamos esto para evitar scroll en el body principal
+  document.documentElement.style.overflow = "hidden";
+  document.documentElement.style.height = "100hv";
 };
 
 const closeAdd = () => {
   AgregarProducto.value = false;
+  // Restaurtamos el scroll en el body principal
+  document.documentElement.style.overflow = "";
+  document.documentElement.style.height = "";
 cargarProductos();
 };
 
 const closeCons = () => {
   ConsultarProducto.value = false;
+  // Restaurtamos el scroll en el body principal
+  document.documentElement.style.overflow = "";
+  document.documentElement.style.height = "";
 }
 
 const openCons = () => {
   ConsultarProducto.value = true;
+   // Usamos esto para evitar scroll en el body principal
+   document.documentElement.style.overflow = "hidden";
+  document.documentElement.style.height = "100hv";
 }
 
 cargarProductos();
@@ -166,19 +185,17 @@ cargarProductos();
   <hr id="l2" />
   <h1 id="panel">Panel Productos</h1>
   <hr id="l3" />
-
   <div class="button-container">
-    <button @click="openAdd" class="custom-button">Agregar Producto</button>
-    <button @click="openAct" class="custom-button">Actualizar Producto</button>
-    <button @click="openCons" class="custom-button">Consultar Producto</button>
-
-
-
+      <button @click="openAdd" class="custom-button">Agregar Producto</button>
+      <button @click="openAct" class="custom-button">Actualizar Producto</button>
+      <button @click="openCons" class="custom-button">Consultar Producto</button>
   </div>
 
-  <ComConsulProPre v-if="ConsultarProducto" @close="closeCons"/>
-  <ComAgregarP v-if="AgregarProducto" @close="closeAdd"/>
-  <ComActP v-if="ActualizarProducto" @close="closeAct"/>
+  
+  <transition name="fade2"><ComAgregarP v-if="AgregarProducto" @close="closeAdd"/></transition>
+  <transition name="fade2"><ComConsulProPre v-if="ConsultarProducto" @close="closeCons"/></transition>
+  <transition name="fade2"><ComActP v-if="ActualizarProducto" @close="closeAct"/></transition>
+
 
   <div class="search-bar">
     <input 
@@ -247,8 +264,15 @@ cargarProductos();
 <style scoped>
 @import url('https://fonts.googleapis.com/css2?family=Jura:wght@700&display=swap');
 
+/*Estilos papa la aparicion de ventanas suavemente */
 
-
+.fade2-enter-active, .fade-leave-active{
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+.fade2-enter-from, .fade-leave-to{
+  opacity: 0;
+  transform: scale(0.9);
+}
 header {
     padding: 20px;
     background-color: #000000;
@@ -436,10 +460,11 @@ header {
  box-shadow: 0 4px 18px 0 rgba(0, 0, 0, 0.25);
 }
 
-/*boton deespues de hacer hover*/
+/*boton despues de hacer hover*/
 .card2:hover .card-button {
  transform: translate(-50%, 50%);
  opacity: 1;
+ cursor: pointer;
 }
 
 .product-image {
@@ -570,5 +595,27 @@ header {
   transition: ease-out 0.3s;
   background-color: #b14a33;
 }
+.no-results{
+  font-size: 24px;
+  font-family: 'Jura', sans-serif;
+  margin-left: 280px;
+  width: 500px;
+  height: 200px;
 
+}
+
+.no-results {
+  animation: Text 0.2s ease-out forwards;
+}
+
+@keyframes Text {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
 </style>

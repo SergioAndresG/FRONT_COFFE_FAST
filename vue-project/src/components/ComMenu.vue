@@ -318,7 +318,7 @@ window.addEventListener("scroll", () => {
     <hr id="l3">
     <hr id="l1">
 
-  <div id="cartas-contenedor">
+  <div id="cartas-contenedor" name="">
     <div class="carta">
       <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTXzf81glE2WSVF-jF6Vu7T1C3tNIhyTFzNSQ&s" alt="Amasijo 1" class="carta-imagen" />
       <h3 class="carta-titulo">Almojabana</h3>

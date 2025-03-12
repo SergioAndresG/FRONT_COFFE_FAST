@@ -7,7 +7,7 @@ const ingredientes = ref([]);
 const unidades = ref([]);
 const showIngredientesModal = ref(false);
 const showCantidadModal = ref(false);
-const selectedIngrediente = ref(null);
+const selectedUnidad_id = ref(null);
 const cantidadIngrediente = ref(null);
 const selectedUnidad = ref(null);
 const searchTerm = ref("");
@@ -23,7 +23,7 @@ const formData = ref({
   imagen: null as File | null,
   stockMinimo: null,    
   tipo: "COMPRADO",
-  ingredientes: [] as {id: number; nombre: string; cantidad: number; unidad: string; imagen?: string}[],
+  ingredientes: [] as {id: number; nombre: string; cantidad: number; unidad: string; imagen?: string; unidad_id: number}[],
 });
 
 // Filtrar ingredientes según término de búsqueda
@@ -46,7 +46,7 @@ watch(() => formData.value.tipo, (newValue) => {
 const cargarMateria = async () => {
   try {
     const respuesta = await axios.get("http://127.0.0.1:8000/materia");
-    ingredientes.value = respuesta.data;
+    ingredientes.value = respuesta.data;  
   } catch (error) {
     console.error("Error al cargar la materia prima");
   }
@@ -100,8 +100,15 @@ const closeCantidadModal = () => {
   document.documentElement.style.height = "";
 };
 
+const actualizarUnidad = () => {
+  const unidadSeleccionada = unidades.value.find(u => u.nombre === selectedUnidad.value);
+  if (unidadSeleccionada) {
+    selectedUnidad_id.value = unidadSeleccionada.id;
+  }
+};
+
 const agregarIngrediente = () => {
-  if (!currentIngrediente.value || cantidadIngrediente.value === null || !selectedUnidad.value) {
+  if (!currentIngrediente.value || cantidadIngrediente.value === null || !selectedUnidad.value || !selectedUnidad_id.value) {
     Swal.fire({
       icon: "error",
       title: "Campos incompletos",
@@ -134,6 +141,7 @@ const agregarIngrediente = () => {
       nombre: currentIngrediente.value.nombre,
       cantidad: cantidadIngrediente.value,
       unidad: selectedUnidad.value,
+      unidad_id: selectedUnidad_id.value,
       imagen: currentIngrediente.value.imagen || null
   });
     
@@ -211,10 +219,12 @@ const handleSubmit = async () => {
 
     // Si es tipo HECHO, enviar los ingredientes
     if (formData.value.tipo === "HECHO") {
-      // Preparar lista de ingredientes en el formato que espera el backend
+       form.append("preparar_inicial", "true");
+        // Preparar lista de ingredientes en el formato que espera el backend
       const ingredientesParaEnviar = formData.value.ingredientes.map(ing => ({
         materia_prima_id: ing.id,
-        cantidad_ingrediente: ing.cantidad
+        cantidad_ingrediente: ing.cantidad,
+        unidad_id: ing.unidad_id,
       }));
       
       // Convertir a string JSON
@@ -379,6 +389,8 @@ const closeModal = () => {
                       </td>
                       <td>{{ ing.cantidad }}</td>
                       <td>{{ ing.unidad }}</td>
+                      <td>{{ }}</td>
+
                       <td>
                         <button @click="openCantidadModal(ing)" class="btn-edit">Editar</button>
                         <button @click="eliminarIngrediente(idx)" class="btn-delete">Eliminar</button>
@@ -395,7 +407,7 @@ const closeModal = () => {
                   </div>
                   <div class="ingrediente-info">
                     <h4>{{ ingrediente.nombre }}</h4>
-                    <p v-if="ingrediente.cantidad">Stock: {{ ingrediente.cantidad }}</p>
+                    <p v-if="ingrediente.cantidad">Stock: {{ ingrediente.cantidad }} {{ ingrediente.unidad.simbolo }}</p>
                   </div>
                   <button 
                     @click="openCantidadModal(ingrediente)" 
@@ -441,10 +453,10 @@ const closeModal = () => {
 
               <div class="form-group">
                 <label for="unidad">Unidad de medida:</label>
-                <select id="unidad" v-model="selectedUnidad" class="unidad-select">
+                <select id="unidad" v-model="selectedUnidad" @change="actualizarUnidad" class="unidad-select">
                   <option value="" disabled selected>Seleccione una unidad</option>
-                  <option v-for="unidad in unidades" :key="unidad.id" :value="unidad.simbolo">
-                    {{ unidad.nombre }} ({{ unidad.simbolo }})
+                  <option v-for="unidad in unidades" :key="unidad.id" :value="unidad.nombre">
+                    {{ unidad.nombre }} ({{ unidad.simbolo }})  
                   </option>
                 </select>
               </div>

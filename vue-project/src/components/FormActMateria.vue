@@ -200,10 +200,10 @@ h1 {
   margin-left: -15px;
 }
 
-form {
-  display: flex;
-  flex-direction: column;
-}
+  form {
+    display: flex;
+    flex-direction: column;
+  }
 
 label {
   color: #fff; /* Texto blanco */
@@ -215,30 +215,30 @@ label {
 
 input {
     font-family: 'Jura', sans-serif;
-  margin-bottom: 15px;
-  padding: 10px;
-  border: none;
-  border-radius: 4px;
-  background-color: #cf9b00; /* Color amarillo similar */
-  color: #000;
-  font-size: 14px;
-}
+      text-align: center;
+  }
 
-.form-container select{
-  font-family: 'Jura', sans-serif;
-  margin-bottom: 15px;
-  padding: 10px;
-  border: none;
-  border-radius: 4px;
-  background-color: #cf9b00; /* Color amarillo similar */
-  color: #000;
-  font-size: 14px;
-}
+  input {
+      font-family: 'Jura', sans-serif;
+    margin-bottom: 15px;
+    padding: 10px;
+    border: none;
+    border-radius: 4px;
+    background-color: #cf9b00; /* Color amarillo similar */
+    color: #000;
+    font-size: 14px;
+  }
 
-input::placeholder {
-  color: #000;
-  opacity: 0.8;
-}
+  .form-container select{
+    font-family: 'Jura', sans-serif;
+    margin-bottom: 15px;
+    padding: 10px;
+    border: none;
+    border-radius: 4px;
+    background-color: #cf9b00; /* Color amarillo similar */
+    color: #000;
+    font-size: 14px;
+  }
 
 button {
   background-color: #ffecb3; /* Botón amarillo claro */
@@ -255,25 +255,38 @@ button {
   margin-left:385px;
   margin-top: -9px;
 
-}
+  button {
+    background-color: #ffecb3; /* Botón amarillo claro */
+    color: #000;
+    padding: 10px 15px;
+    font-size: 14px;
+    border: none;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: 0.3s ease;
+    font-family: 'Jura', sans-serif;
+    width: 150px;
+    margin-left: 230px;
 
-button:hover {
-  background-color: #ffd700;
-}
+  }
+
+  button:hover {
+    background-color: #ffd700;
+  }
 
 
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 9999;
-}
+  .modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+  }
 
 .modal-content {
   background-color: rgb(0, 0, 0);

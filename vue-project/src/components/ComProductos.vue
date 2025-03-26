@@ -21,9 +21,24 @@ const empleado = ref([]);
 // Contraseña obtenida de la informacion proporcionada por el endpoint
 const contraseñaProporcionada = ref("");
 
-//Variables reactivas para la carta emergente con informacion del producto
-const emergenteMasInformacion = ref(false);
+//Variables para la carta emergente con informacion del producto
+
+const emergenteReceta = ref(false);
 const productoSeleccionado = ref({})
+const recetaSeleccionada = ref("");
+const emergenteMasInformacion = ref(false);
+
+
+const openReceta = (materiaPrima) => {
+  emergenteReceta.value = true;
+  recetaSeleccionada.value = materiaPrima;
+};
+
+const closeReceta = () => {
+  emergenteReceta.value = false;
+};
+
+
 
 const cargarEmpleados = async () => {
   try {
@@ -224,6 +239,8 @@ cargarProductos();
         <div class="info-right">
           <p>Precio: <span class="product-price">${{ producto.precio_unitario }}</span></p>
           <p>Categoría: <span class="product-price">{{ producto.categoria }}</span></p>
+
+          
         </div>  
     </div>
     <div class="product-buttons">
@@ -252,11 +269,30 @@ cargarProductos();
             <p>Precio: <span class="product-price">${{ productoSeleccionado.precio_unitario }}</span></p>
             <p>Categoría: <span class="product-price">{{ productoSeleccionado.categoria }}</span></p>
             <p>Stock Minimo: <span class="product-price">{{ productoSeleccionado.stock_minimo }}</span></p>
+            <button v-if="productoSeleccionado.hecho" 
+                  @click="openReceta(productoSeleccionado.materia_prima)" 
+                  class="mirar-receta">
+            Mirar Receta
+          </button>
+
       </div>
 
       <button @click="closeEmergente" class="closeMore">Cerrar</button>
-    </div> 
+    </div>
   </div>
+
+  <!-- Carta emergente para la receta -->
+  <div v-if="emergenteReceta" class="moreInfo" @click.self="closeReceta">
+  <div class="cardInfo">
+    <div class="container-info">
+      <h3>Materia Prima</h3>
+      <p v-if="recetaSeleccionada.length > 0">{{ recetaSeleccionada }}</p>
+      <p v-else>No hay materias primas registradas para este producto.</p>
+    </div>
+    <button @click="closeReceta" class="closeMore">Cerrar</button>
+  </div>
+</div>
+
 
 
 </template>
@@ -617,5 +653,20 @@ header {
     opacity: 1;
     transform: scale(1);
   }
+}
+
+.mirar-receta {
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+  margin-top: 15px;
+}
+
+.mirar-receta:hover {
+  background-color: #45a049;
 }
 </style>

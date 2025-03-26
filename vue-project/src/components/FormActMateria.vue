@@ -240,7 +240,7 @@ input {
     font-size: 14px;
   }
 
-button {
+ button {
   background-color: #ffecb3; /* Botón amarillo claro */
   color: #000;
   padding: 10px 15px;
@@ -254,6 +254,7 @@ button {
   height: 35px;
   margin-left:385px;
   margin-top: -9px;
+ }
 
   button {
     background-color: #ffecb3; /* Botón amarillo claro */

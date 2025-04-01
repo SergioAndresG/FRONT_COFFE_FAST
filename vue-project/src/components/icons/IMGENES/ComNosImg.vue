@@ -7,11 +7,11 @@
   <style>
   .imagen3 {
     display: flex;
-    height: 300px;
+    height: 360px;
     width: 370px; 
     border-radius: 250px;
     margin-left: 64%;
-    margin-top: -173px;
+    margin-top: -403px;
   
   }
   .contenedor{

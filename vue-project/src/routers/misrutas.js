@@ -1,4 +1,7 @@
 import ComAdmi from "@/components/ComAdmi.vue";
+import ComConsulProPre from "@/components/ComConsulProPre.vue";
+import ComConsulPro from "@/components/ComConsulPro.vue";
+import ComConProN from "@/components/ComConProN.vue";
 import ComConsutUsu from "@/components/ComConsutUsu.vue";
 import ComEmpleado from "@/components/ComEmpleado.vue";
 import ComForAct from "@/components/ComForAct.vue";
@@ -6,7 +9,6 @@ import ComForAgregar from "@/components/ComForAgregar.vue";
 import ComForDel from "@/components/ComForDel.vue";
 import ComGest from "@/components/ComGest.vue";
 import ComGestEmpleadoPr from "@/components/ComGestEmpleadoPr.vue";
-import ComHome from "@/components/ComHome.vue";
 import ComJefe from "@/components/ComJefe.vue";
 import ComMateriaPrima from "@/components/ComMateriaPrima.vue";
 import ComMateriaPrimaAd from "@/components/ComMateriaPrimaAd.vue";
@@ -18,20 +20,19 @@ import ComProductosAdmin from "@/components/ComProductosAdmin.vue";
 import ComSesion from "@/components/ComSesion.vue";
 import SnowFall from "@/components/SnowFall.vue";
 import { createRouter, createWebHistory } from "vue-router";
+import ComConProC from "@/components/ComConProC.vue";
+import ActulizacionPerfil from "@/components/ActulizacionPerfil.vue";
+import ComPCliente from "@/components/ComPCliente.vue";
+import ComPedidos from "@/components/ComPedidos.vue";
 
 const routes = [
-    {
-        path: "/",
-        name: "Home",
-        component: ComHome
-    },
     {
         path: "/Nosotros",
         name: "Nosotros",
         component: ComNostros
     },
     {
-        path: "/Sesion",
+        path: "/",
         name:"Sesion",
         component: ComSesion
     },
@@ -116,12 +117,47 @@ const routes = [
         path: "/Snowl",
         name: "Snowl",
         component: SnowFall
+    },
+    {
+        path: "/ConsultarPre",
+        name: "ConsultarPre",
+        component: ComConsulProPre
+    },
+    {
+        path: "/ConsultarProid",
+        name: "ConsultarProid",
+        component: ComConsulPro
+    },
+    {
+        path: "/ConsultarProN",
+        name: "ConsultarProN",
+        component: ComConProN
+    },
+    {
+        path: "/ConsultarProC",
+        name: "ConsultarProC",
+        component: ComConProC
+    },
+    {
+        path: "/ActualizarPerfil",
+        name: "ActualizarPerfil",
+        component: ActulizacionPerfil
+    },
+    {
+        path:"/Cliente",
+        name:"PedidoCliente",
+        component: ComPCliente
+    },
+    {
+        path:"/Pedidos",
+        name:"Pedidos",
+        component: ComPedidos
     }
 ]
 
 const router = createRouter({
     history: createWebHistory(),
     routes
-})
+});
 
 export default router;

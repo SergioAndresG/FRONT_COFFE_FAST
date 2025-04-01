@@ -30,10 +30,10 @@ body, router-view {
   z-index: -1; /* Envía la animación detrás del contenido principal */
   pointer-events: none; /* Permite la interacción con los elementos de encima */
 }
+
 #app {
   position: relative; /* Para que su contenido esté encima de la animación */
   height: 100%;
-
 }
 
 </style>

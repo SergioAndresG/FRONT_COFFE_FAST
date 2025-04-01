@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import ComNosImg from './icons/IMGENES/ComNosImg.vue';
 import ComImagen from './icons/IMGENES/ComImagen.vue';
 import ComInicioImg from './icons/IMGENES/ComInicioImg.vue';
 </script>
@@ -10,7 +11,6 @@ import ComInicioImg from './icons/IMGENES/ComInicioImg.vue';
       <div class="menu-hamburguesa" id="menu-hamburguesa">
         <ul class="menu">
           <li><router-link to="/Menu">Menu</router-link></li>
-          <li><router-link to="/Nosotros">Nosotros</router-link></li>
           <li><router-link to="/Sesion">Iniciar Sesión</router-link></li>
         </ul>
       </div>
@@ -44,6 +44,60 @@ import ComInicioImg from './icons/IMGENES/ComInicioImg.vue';
         </p>
         <hr id="car">
     </div>
+
+  <div class="nosotros-banner">
+      <h2>Nosotros</h2>
+  </div>
+
+
+  <div class="contenedor5">
+      <p id="text4">En Coffee Bike nos apasiona brindar una experiencia única en cada taza. Desde el primer sorbo hasta el último, queremos que disfrutes del auténtico sabor del café recién molido, cuidadosamente seleccionado de los mejores cultivos. Nuestro espacio ha sido diseñado para que te sientas como en casa, ya sea que vengas a trabajar, relajarte o compartir momentos especiales.
+        Además del café, ofrecemos una amplia variedad de bebidas artesanales, postres irresistibles y opciones ligeras para cualquier momento del día. Todo preparado con ingredientes frescos y mucho cariño.</p>
+    </div>
+
+
+  <div id="container-text-2">
+    <h1 id="nuestro">NUESTRA HISTORIA</h1>
+    <p id="Coffe-text">Coffee Bike nació del sueño de compartir momentos únicos a través del café. Todo comenzó con una pequeña máquina de espresso y una gran pasión por descubrir los mejores granos del mundo. Inspirados por el aroma y la magia que cada taza puede ofrecer, decidimos crear un espacio donde el café no solo se disfrute, sino que también se sienta.  Gracias a nuestros clientes, cada taza que servimos es un testimonio de amistad, tradición y amor por el café. ¡Esta historia apenas comienza, y queremos que seas parte de ella! </p>
+  </div>
+
+
+  <ComNosImg/>
+
+  <div class="card-flip">
+    <div class="card-item">
+      <div class="card-front" :style="{ backgroundImage: 'url(https://i.postimg.cc/k5Lnzfkd/Whats-App-Image-2024-11-22-at-5-15-44-PM.jpg)' }">
+      </div>
+      <div class="card-back">
+        <p class="small-desc">
+          Tomar riesgos es la piedra angular de los imperios
+        </p>
+      </div>
+    </div>
+    
+    <div class="card-item">
+      <div class="card-front" :style="{ backgroundImage: 'url(https://i.postimg.cc/k5Lnzfkd/Whats-App-Image-2024-11-22-at-5-15-44-PM.jpg)' }">
+        <!-- Imagen de fondo -->
+      </div>
+      <div class="card-back">
+        <p class="small-desc">
+          ¡Explora nuevas posibilidades con facilidad!
+        </p>
+      </div>
+    </div>
+    
+    <div class="card-item">
+      <div class="card-front" :style="{ backgroundImage: 'url(https://i.postimg.cc/k5Lnzfkd/Whats-App-Image-2024-11-22-at-5-15-44-PM.jpg)' }">
+        <!-- Imagen de fondo -->
+      </div>
+      <div class="card-back">
+        <p class="small-desc">
+          ¡Innovación al alcance de tu mano!
+        </p>
+      </div>
+    </div>
+  </div>
+
   
     <footer>
       <p>&copy; 2024 </p>
@@ -140,11 +194,19 @@ body {
   hr {
     border-top: 2px solid #D9AB23; /* Ajusta el grosor y color según tus necesidades */
     margin: 20px 0; /* Ajusta el margen superior e inferior */
-    margin-top: 54px;
+    margin-top: 64px;
     width: 1300px;
     margin-left: 7%;
   }
-  
+
+
+  #hr1 {
+    border-top: 2px solid #D9AB23; /* Ajusta el grosor y color según tus necesidades */
+    margin: 20px 0; /* Ajusta el margen superior e inferior */
+    margin-top: 6px;
+    width: 1300px;
+    margin-left: 7%;
+  }
   #l2 {
     margin-top: 10px;
     width: 800px;
@@ -255,6 +317,126 @@ body {
     transition: all 0.5s ease-out;
     color: #ffffff;
   }
+
+  
+
+
+
+  #text4{
+    font-family: 'Jura', sans-serif;
+    font-size: 23px;
+    margin-top: 50px;
+    width: 990px;
+
+  }
+
+  .nosotros-banner {
+  width: 100%;
+  background-color: #d9ab23be;
+  text-align: center;
+  padding: 10px 0;
+  border: 1px solid;
+  margin-top: 65px;
+}
+
+.nosotros-banner h2 {
+  font-family: 'Jura', sans-serif;
+  margin: 0;
+  font-size: 24px;
+  color: #ffffff;
+}
+
+.contenedor5 {
+  height: 100vh; /* Ocupa toda la ventana */
+  background-image: url("https://i.postimg.cc/k5Lnzfkd/Whats-App-Image-2024-11-22-at-5-15-44-PM.jpg");
+  background-size: cover; /* La imagen cubre todo el contenedor */
+  background-position: center; /* Centra la imagen */
+  background-attachment: fixed; /* Imagen fija */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: white;
+  text-align: center;
+  height: 380px;
+}
+
+
+/* Estilo para el resto del contenido */
+#container-text,
+#container-text-2 {
+  padding: 2rem;
+  line-height: 1.6;
+}
+
+
+  #container-text-2{
+    width: 700px;
+    margin-left: 123px;
+    text-align: center;
+  }
+
+  #nuestro{
+    color: #D9AB23;
+    font-family: 'Jura', sans-serif;
+    margin-left: 40px;
+  }
+
+  #Coffe-text{
+    font-family: 'Jura', sans-serif;
+    font-size: 20px;
+    margin-top: 20px;
+    margin-left: 20px;
+  }
+
+  .card-flip {
+  display: flex;
+  justify-content: space-around;
+  gap: 20px;
+}
+
+.card-item {
+  margin-left: -30px;
+  width: 300px;
+  height: 300px;
+  perspective: 1000px; /* Esto da el efecto de profundidad al voltear */
+}
+
+.card-front, .card-back {
+  width: 100%;
+  height: 100%;
+  backface-visibility: hidden; /* Esto asegura que la parte de atrás no sea visible cuando esté volteada */
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 10px;
+  border-radius: 10px;
+  transition: transform 0.6s; /* Añade una transición suave al voltear */
+}
+
+.card-front {
+  background-size: cover;
+  background-position: center;
+}
+
+.card-back {
+  background-color: #fefdae;
+  font-family: 'Jura', sans-serif;
+  font-size: 30px;
+  transform: rotateY(180deg); /* Voltea la parte de atrás */
+}
+
+.card-item:hover .card-front {
+  transform: rotateY(180deg); /* Voltea la parte delantera cuando el mouse está sobre la carta */
+}
+
+.card-item:hover .card-back {
+  transform: rotateY(0); /* Muestra la parte trasera cuando el mouse está sobre la carta */
+}
+
   
   footer {
       padding: 20px;

@@ -7,28 +7,28 @@ import FormAddMateria from './FormAddMateria.vue';
 import FormActMateria from './FormActMateria.vue';
 
 // Productos predefinidos para mostrar
-const productos = ref([]);
+  const materias_primas = ref([]);
 
-const cargarProductos = async () => {
-  try {
-    const respuesta = await axios.get("http://127.0.0.1:8000/materia"); // Ajusta la URL según tu backend
-    productos.value = respuesta.data; // Asigna los datos de la respuesta
-  } catch (error) {
-    console.error("Error al cargar productos:", error);
-  }
-};
+  const cargarMateriasPrimas = async () => {
+    try {
+      const respuesta = await axios.get("http://127.0.0.1:8000/materia");
+      materias_primas.value = respuesta.data; // Asigna los datos de la respuesta
+    } catch (error) {
+      console.error("Error al cargar productos:", error);
+    }
+  };
 
-cargarProductos();
+cargarMateriasPrimas();
 
 const eliminarMateria = async (idMateria: number) => {
   try {
     // Realizar la solicitud DELETE al backend enviando solo el ID en el cuerpo de la solicitud
-    const response = await axios.delete(`http://localhost:8000/materia/${idMateria}`);
+    const response = await axios.delete(`http://localhost:8080/materia/${idMateria}`);
 
     console.log("Materia eliminada con éxito", response.data);
 
     // Recargar la lista de materias para reflejar los cambios
-    cargarProductos();
+    cargarMateriasPrimas();
   } catch (error) {
     console.error("Error al eliminar la materia:", error);
   }
@@ -41,22 +41,22 @@ const AgregarMateria = ref(false);
 const openAct = () => {
   ActualizarMateria.value = true;
 }
-cargarProductos();
+cargarMateriasPrimas();
 
 const closeAct = () => {
   ActualizarMateria.value = false;
 }
-cargarProductos();
+cargarMateriasPrimas();
 
 const openAdd = () => {
   AgregarMateria.value = true;
 };
-cargarProductos();
+cargarMateriasPrimas();
 
 const closeAdd = () => {
   AgregarMateria.value = false;
 };
-cargarProductos();
+cargarMateriasPrimas();
 </script>
 
 <template>
@@ -84,21 +84,23 @@ cargarProductos();
   <FormActMateria v-if="ActualizarMateria" @close="closeAct"/>
 
   <div class="product-container">
-  <div class="card2" v-for="producto in productos" :key="producto.id">
+  <div class="card2" v-for="materia in materias_primas" :key="materia.id">
     <div class="product-image">
-      <img v-if="producto.ruta_imagen" :src="`http://127.0.0.1:8000/${producto.ruta_imagen}`" class="product-image" />
-        <span v-else>{{ producto.imagen }}</span>
+      <img v-if="materia.ruta_imagen" :src="`http://127.0.0.1:8000/${materia.ruta_imagen}`" class="product-image" />
+        <span v-else>{{ materia.imagen }}</span>
     </div>
-    <p>ID: <span class="product-id">{{ producto.id }}</span></p>
-    <div class="product-info">
-      <p>Nombre: <span class="product-name">{{ producto.nombre }}</span></p>
-      <p>Unidad de Medida: <span class="product-description">{{ producto.unidad_medida }}</span></p>
-      <p>Cantidad: <span class="product-quantity">{{ producto.cantidad }}</span></p>
-      <p>Fecha Ingreso: <span class="product-price">{{ producto.fecha_ingreso }}</span></p>
-      <p>Fecha Vencimineto: <span class="product-price">{{ producto.fecha_vencimiento }}</span></p>
+      <div class="product-info">
+        <div class="info-left">
+        <p>ID:<span class="product-id">{{ materia.id }}</span></p>
+        <p>Nombre: <span class="product-name">{{ materia.nombre }}</span></p>
+      </div>
+      <div class="info-right">
+        <p>Cantidad: <span class="product-quantity">{{ materia.cantidad}} {{ materia.unidad.simbolo }} </span></p>
+        <p>Categoría: <span class="product-price">{{ materia.categoria }}</span></p>
+      </div>
     </div>
     <div class="product-buttons">
-      <button class="delete-button" @click="(producto.id)">
+      <button class="delete-button" @click="(materia.id)">
         Eliminar
       </button>
     </div>
@@ -106,30 +108,7 @@ cargarProductos();
 </div>
 
   <footer>
-      <p>&copy; 2024 </p>
-      
-      <ul class="wrapper">
-    <a href="https://www.instagram.com/de_lonuestro?igsh=MXU3NTQ4cGY4cXI2ZA==" target="_blank" rel="noopener noreferrer">
-
-  <li class="icon instagram">
-      <span class="tooltip">Instagram</span>
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        height="1.2em"
-        fill="currentColor"
-        class="bi bi-instagram"
-        viewBox="0 0 16 16"
-      >
-        <path
-          d="M8 0C5.829 0 5.556.01 4.703.048 3.85.088 3.269.222 2.76.42a3.917 3.917 0 0 0-1.417.923A3.927 3.927 0 0 0 .42 2.76C.222 3.268.087 3.85.048 4.7.01 5.555 0 5.827 0 8.001c0 2.172.01 2.444.048 3.297.04.852.174 1.433.372 1.942.205.526.478.972.923 1.417.444.445.89.719 1.416.923.51.198 1.09.333 1.942.372C5.555 15.99 5.827 16 8 16s2.444-.01 3.298-.048c.851-.04 1.434-.174 1.943-.372a3.916 3.916 0 0 0 1.416-.923c.445-.445.718-.891.923-1.417.197-.509.332-1.09.372-1.942C15.99 10.445 16 10.173 16 8s-.01-2.445-.048-3.299c-.04-.851-.175-1.433-.372-1.941a3.926 3.926 0 0 0-.923-1.417A3.911 3.911 0 0 0 13.24.42c-.51-.198-1.092-.333-1.943-.372C10.443.01 10.172 0 7.998 0h.003zm-.717 1.442h.718c2.136 0 2.389.007 3.232.046.78.035 1.204.166 1.486.275.373.145.64.319.92.599.28.28.453.546.598.92.11.281.24.705.275 1.485.039.843.047 1.096.047 3.231s-.008 2.389-.047 3.232c-.035.78-.166 1.203-.275 1.485a2.47 2.47 0 0 1-.599.919c-.28.28-.546.453-.92.598-.28.11-.704.24-1.485.276-.843.038-1.096.047-3.232.047s-2.39-.009-3.233-.047c-.78-.036-1.203-.166-1.485-.276a2.478 2.478 0 0 1-.92-.598 2.48 2.48 0 0 1-.6-.92c-.109-.281-.24-.705-.275-1.485-.038-.843-.046-1.096-.046-3.233 0-2.136.008-2.388.046-3.231.036-.78.166-1.204.276-1.486.145-.373.319-.64.599-.92.28-.28.546-.453.92-.598.282-.11.705-.24 1.485-.276.738-.034 1.024-.044 2.515-.045v.002zm4.988 1.328a.96.96 0 1 0 0 1.92.96.96 0 0 0 0-1.92zm-4.27 1.122a4.109 4.109 0 1 0 0 8.217 4.109 4.109 0 0 0 0-8.217zm0 1.441a2.667 2.667 0 1 1 0 5.334 2.667 2.667 0 0 1 0-5.334z"
-        ></path>
-      </svg>
-  </li>
-</a>
-
-</ul>
-
-  
+      <p>&copy; 2024 </p>  
   </footer>
 </template>
 
@@ -233,6 +212,7 @@ header {
         font-size: 14px;
         cursor: pointer;
         transition: background-color 0.3s;
+        font-family: 'Jura', sans-serif;
     }
 
     .custom-button:hover {
@@ -240,27 +220,27 @@ header {
     }
 
 
-    .product-container {
+.product-container {
   width: 1000px;
   margin-left: 16%;
   margin-top: 70px;
   display: grid;
-  grid-template-columns: repeat(3, 1fr); /* Tres columnas */
-  gap: 20px; /* Espacio entre los productos */
-  padding: 20px; /* Margen interno */
-  justify-content: center; /* Centrar el contenido horizontalmente */
+  grid-template-columns: repeat(3, 1fr); 
+  gap: 30px; 
+  padding: 20px; 
+  justify-content: center; 
 }
-
 .card2 {
   font-family: 'Jura', sans-serif;
   width: 320px;
-  background-color: #1a1a1a;
+  height: 460px;
+  background-color: #ad850d;
   color: white;
   border-radius: 12px;
-  text-align: center;
-  padding: 15px;
+  text-align: left;
+  font-size: 14px;
+  padding: 25px;
   transition: transform 0.2s ease-in-out;
-  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 .card2:hover {
@@ -286,9 +266,27 @@ header {
   margin-top: 15px;
 }
 
+.product-info {
+  display: flex;
+  justify-content: space-between;
+  margin-left: 25px;
+}
+.product-info p{
+  font-size: 20px;
+}
+.product-info span{
+  font-size: 15px;
+}
+.info-left, .info-right {
+  width: 50%;
+}
+.info-left p, .info-right p {
+  margin: 20px;
+}
+
 .delete-button {
-  background-color: #d9ab23;
-  color: white;
+  background-color: #f5d881;
+  color: rgb(0, 0, 0);
   border: none;
   padding: 10px 20px;
   border-radius: 5px;

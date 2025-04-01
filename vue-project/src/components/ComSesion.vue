@@ -2,7 +2,9 @@
 import ComImagen from './icons/IMGENES/ComImagen.vue';
 import { ref } from "vue";
 import axios from "axios";
+import { DotLottieVue } from '@lottiefiles/dotlottie-vue';
 import { useRouter } from "vue-router";
+import { getCurrentUser } from '@/servicies/auths';
 
 const nombre = ref("");
 const contraseña = ref("");
@@ -10,50 +12,81 @@ const errorMessage = ref(null);
 const successMessage = ref(null);
 const router = useRouter();
 
+axios.interceptors.request.use(config => {
+  const token = localStorage.getItem("jwtToken");
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`
+  }
+  return config;
+})
+
 const validarUsuario = async () => {
   try {
     // Llamada al endpoint de login
     const respuesta = await axios.post("http://127.0.0.1:8000/login", {
-      nombre: nombre.value,
-      contraseña: contraseña.value,
-    });
-
-    // Aquí se valida el rol y se redirige a la página correspondiente
-    const rol = respuesta.data.rol;  // El rol que llega del backend
-
-    if (rol) {
-      if (rol === "ADMINISTRADOR") {
-        router.push("/Admi");  // Redirige a la ruta para Administradores
-      } else if (rol === "JEFE") {
-        router.push("/Jefe");  // Redirige a la ruta para Jefe
-      } else if (rol === "EMPLEADO") {
-        router.push("/Empleado");  // Redirige a la ruta para Empleados
-      } else {
-        errorMessage.value = "Rol no reconocido. Acceso denegado.";
-      }
+        nombre: nombre.value,
+        contraseña: contraseña.value,
+        },
+        {
+        headers: {
+          "Content-Type": "application/json",  
+        },
     }
+    
+  );
+
+
+    // Almacena el token 
+    localStorage.setItem("jwtToken", respuesta.data.access_token);
+
+    const userData = await getCurrentUser();
+    console.log("Datos enviados", userData);
+
+
+    localStorage.setItem("userData", JSON.stringify(userData));
+
+    //Redireccion en base al rol
+    switch (userData.rol) {
+      case "JEFE":
+        router.push({
+          name: "Jefe",
+          state: {userData}
+        })
+        break;
+      case "ADMINISTRADOR":
+        router.push({
+          name: "Admi",
+          state: {userData}
+        })
+         break;
+      case "EMPLEADO":
+        router.push({
+          name: "Empleado",
+          state: {userData}
+        })
+      break;
+      default:
+        break;
+    }
+    
+    // Si la respuesta es exitosa, muestra el mensaje de bienvenida
+    successMessage.value = respuesta.data.mensaje;
   } catch (error) {
-    // Manejo de errores: si ocurre un error en la respuesta, captúralo
-    if (error.response) {
-      // Si hay una respuesta del servidor, muestra el mensaje de error
-      errorMessage.value = error.response.data || "Error al iniciar sesión";
-    } else {
-      // Si no hay respuesta, muestra un error genérico
-      errorMessage.value = "Error de conexión o servidor no disponible";
-    }
+    errorMessage.value = error.response?.data?.detail || 
+                        "Error de conexión";
+    localStorage.removeItem("jwtToken");
   }
 };
 </script>
 
 
 <template>
+
     <header>
         <nav>
-        <ComImagen/>
+        <ComImagen class="logo"/>
         <div class="menu-hamburguesa" id="menu-hamburguesa">
             <ul class="menu">
-            <li><router-link to="/">Home</router-link></li>
-            <li><router-link to="/Nosotros">Nosotros</router-link></li>
             </ul>
         </div>
         </nav>
@@ -61,23 +94,23 @@ const validarUsuario = async () => {
   <hr>
   <hr id="l2">
   <div class="login-container">
-    <h2>Iniciar Sesión</h2>
-
+  
+  <h2>Iniciar Sesión</h2> 
     <form @submit.prevent="validarUsuario">
       <label for="name">Nombre:</label>
       <input
         type="text"
-        v-model="nombre"
+        v-model.trim="nombre"
         id="nombre"
         name="nombre"
+        autocomplete="off"
         placeholder="Ingrese su nombre"
         required
       />
-
       <label for="password">Contraseña:</label>
       <input
         type="password"
-        v-model="contraseña"
+        v-model.trim="contraseña"
         id="contraseña"
         name="contraseña"
         placeholder="Ingrese su contraseña"
@@ -95,7 +128,8 @@ const validarUsuario = async () => {
     <!-- Mensaje de éxito si el login es correcto -->
     <p v-if="successMessage" class="success">{{ successMessage }}</p>
   </div>
-    <div id="hl"><img src="https://i.postimg.cc/d33z8SRy/Whats-App-Image-2024-11-22-at-4-54-18-PM-1.jpg" id="imagen"></div>
+  <DotLottieVue class="animation" style="height: 600px; width: 600px; margin-left: 55%; margin-top: -500px; " autoplay loop src="https://lottie.host/828cc208-a80f-49c5-b398-365742b9d448/1yNKlcoM18.lottie" />
+
 
     <footer>
       <p>&copy; 2024 </p>
@@ -118,81 +152,33 @@ const validarUsuario = async () => {
   </ul>
   
   </footer>
+
 </template>
 
 <style scoped>
 @import url('https://fonts.googleapis.com/css2?family=Jura:wght@700&display=swap');
+
+
 body {
     font-family: 'Jura', sans-serif;
     font-weight: normal;
     color: black; /* Cambiado aquí */
 }
-  
-  header {
-    padding: 20px;
-    background-color: #000000;
-  }
-  
-
-  
-  ul li {
-    text-decoration: none;
-    border-bottom: 5px solid #A65814;
-    transition: border-bottom-color 0.3s ease-in-out;
-    border-radius: 5px;
-  }
-  
-  ul li:hover {
-    border-bottom-color: rgb(17, 0, 255);
-  }
-
-  nav{
-    margin-left: 173px;
-  }
-  
-  nav ul {
-    list-style: none;
-    display: flex;
-    justify-content: space-evenly;
-    margin-left: 314px;
-    margin-top: -73px;
-  }
-  
-  nav li a {
-    font-family: 'Jura', sans-serif;
-
-    text-decoration: none;
-    color: white;
-    padding: 10px;
-  }
-  
-  #res:hover {
-    background-color: #ff9178;
-    color: aliceblue;
-  }
-  
-  #res{
-    transition: background-color 0.3s ease-in-out, color 0.3s ease-in-out;
-    background-color: #e03743;
-    text-decoration: none;
-    border-bottom: 0px;
-    width: 150px;
-    text-align: center;
-    font-size: 18px;
-    padding: 4px;
-    border-radius: 15px;
+    
+  .logo{
+    margin-left: 650px;
   }
   
   hr {
     border-top: 2px solid #D9AB23; /* Ajusta el grosor y color según tus necesidades */
     margin: 20px 0; /* Ajusta el margen superior e inferior */
-    margin-top: 54px;
+    margin-top: -14px;
     width: 1300px;
     margin-left: 7%;
   }
   
   #l2 {
-    margin-top: 10px;
+    margin-top:5px;
     width: 800px;
     margin-left: 22%;
   }
@@ -204,7 +190,7 @@ body {
     width: 500px;
     height: 380px;
     background-color: hsla(66, 20%, 68%, 0.4);
-    margin-left: 260px;
+    margin-left: 210px;
     margin-top: 80px;
 }
 
@@ -247,7 +233,15 @@ input[type="password"] {
     border: 1px solid #a64e4e;
     border-radius: 12px;
     background-color: #D9AB23;
+    font-family: 'Jura', sans-serif;
+    transition: all 0.3s ease-in-out ;
 }
+
+input:focus{
+  transform: scale(1.02);
+  border-color: #000000;
+}
+
 
 .forgot-password {
     display: block;
@@ -299,8 +293,8 @@ input[type="password"] {
   }
 
   #imagen{
-    margin-left: 854px;
-    width: 480px;
+    margin-left: 954px;
+    width: 390px;
     height: 390px;
     margin-top: -435px;
     border-radius: 200px;

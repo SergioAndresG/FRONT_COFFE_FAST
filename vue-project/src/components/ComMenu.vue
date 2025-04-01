@@ -1,69 +1,65 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onBeforeUnmount, onMounted } from 'vue';
 import ComImagen from './icons/IMGENES/ComImagen.vue';
-import Swal from "sweetalert2";  // Asegúrate de importar SweetAlert2
-import axios from 'axios';
+import Swal from "sweetalert2";  // Aseguye de importar SweetAlert2
+import { useRouter } from 'vue-router';
+import { store } from './datos' //Importacion para guardar los datos y lo que se pida en el menu para el panel de clienets
+
+const router = useRouter();
 
 interface Producto {
-  id: number;
   nombre: string;
   precio: number;
   imagen: string;
   cantidad: number; // Agregar campo cantidad
-  detalle_factura: null;
-}
-
-const Compras = async () => {
-  if (carrito.value.length == 0){
-    Swal.fire({
-      icon: "warning",
-      title:"No hay productos en el carrito",
-    });
-    return
-  }
-  const produtosCantidad = conversorParaBackend();
-
-
-  try {
-    // Hacemos la soliitud al backend
-    const response = await axios.post(
-      "http://127.0.0.1:8000/comprar",
-      produtosCantidad
-    )
-
-    Swal.fire({
-      icon: "success",
-      title: "Compra exitosa"
-    });
-    carrito.value = []; // Vacia el contenido del carrito
-  } catch (error) {
-    Swal.fire({
-      icon: "error",
-      title: "No se pudo completar la compra",
-      text: error.response?.data?.detail || "Error no esperado"
-    })
-  }
 }
 
 // Ejemplo de los datos o interfaz de los productos
-const carrito = ref<Producto[]>([]);  
-
-const conversorParaBackend = async () =>{
-  // Creamos un Objeto para almcenar loes resultaddos
-    const productosCompra: Record<number, number> = {}
-      // Iteramos sobre cada producto del carrito
-    carrito.value.forEach((producto) => {
-      // Usar el id de clave y la cantidad como valor
-      productosCompra[producto.id] = producto.cantidad
-    });
-    return productosCompra
-
-}
-
-
-
+const carrito = ref<Producto[]>([]);
 const mostrarModal = ref(false);
 const compraExitosa = ref(false);
+
+
+const carritoWidth = ref(350); 
+const isResizing = ref(false);
+const startX = ref(0);
+const startWidth = ref(0);
+
+//Redimensionar el carrito de productos
+const iniciarResize = (e: MouseEvent) => {
+  // Solo se  redimensionar si se hace clic en el area del handle
+  if (!(e.target as HTMLElement).classList.contains('resize-handle')) return;
+  
+  isResizing.value = true;
+  startX.value = e.clientX;
+  startWidth.value = carritoWidth.value;
+  
+  document.addEventListener('mousemove', duranteResize);
+  document.addEventListener('mouseup', detenerResize);
+  
+  e.preventDefault();
+};
+
+const duranteResize = (e: MouseEvent) => {
+  if (!isResizing.value) return;
+  
+  const deltaX = e.clientX - startX.value;
+  const newWidth = startWidth.value + deltaX;
+  
+  carritoWidth.value = Math.max(300, Math.min(800, newWidth));
+};
+
+const detenerResize = () => {
+  isResizing.value = false;
+  document.removeEventListener('mousemove', duranteResize);
+  document.removeEventListener('mouseup', detenerResize);
+};
+
+// limpiar los listeners cuando el componente se desmonte
+onBeforeUnmount(() => {
+  document.removeEventListener('mousemove', duranteResize);
+  document.removeEventListener('mouseup', detenerResize);
+});
 
 // Agregar al carrito (si el producto ya existe, solo aumentamos la cantidad)
 const agregarAlCarrito = (event: MouseEvent) => {
@@ -71,8 +67,6 @@ const agregarAlCarrito = (event: MouseEvent) => {
   const nombre = carta.querySelector('.carta-titulo')?.textContent || '';
   const precio = parseFloat(carta.querySelector('.carta-descripcion')?.textContent?.replace('$', '').replace('.', '') || '0');
   const imagen = (carta.querySelector('.carta-imagen') as HTMLImageElement).src;
-
-  const id = parseInt(carta.getAttribute('data-id') || '0');
 
   const productoExistente = carrito.value.find(p => p.nombre === nombre);
   if (productoExistente) {
@@ -89,8 +83,6 @@ const agregarAlCarrito = (event: MouseEvent) => {
   });
 };
   
-
-
 
 // Función para aumentar la cantidad
 const incrementarCantidad = (index: number) => {
@@ -111,6 +103,72 @@ const eliminarProducto = (index: number) => {
   carrito.value.splice(index, 1);
 };
 
+// Funcion para comprar los productos y para mostrar la factura a la hora de la compra
+
+let carritoFacturado = []; // Variable global para guardar la compra
+
+
+// Mostrar formulario para datos del cliente
+const comprarProductos = async () => {
+  if (carrito.value.length === 0) {
+    await Swal.fire({
+      icon: "warning",
+      title: "Carrito vacío",
+      text: "No hay productos en el carrito para comprar.",
+      allowOutsideClick: false,
+      allowEscapeKey: false,
+      backdrop: true,
+    });
+    return;
+  }
+
+  // Configuración simplificada y más robusta
+  const { value: formValues } = await Swal.fire({
+  title: '<span style="font-family: \'Jura\', sans-serif">Datos del cliente</span>',
+  html: `
+    <div style="font-family: 'Jura', sans-serif">
+      <input id="swal-input1" style="font-family: inherit; width: 95%; padding: 12px; margin: 8px 0; border: 1px solid gold; background: black; color: white;" placeholder="Nombre completo">
+      <select id="swal-input2" style="font-family: inherit; width: 95%; padding: 12px; margin: 8px 0; border: 1px solid gold; background: black; color: white;">
+        <option value="">Tipo de documento</option>
+        <option value="C.C">Cédula de ciudadania</option>
+        <option value="C.C">Cédula de extranjeria</option>
+        <option value="T.I">Tarjeta de Identidad</option>
+      </select>
+      <input id="swal-input3" style="font-family: inherit; width: 95%; padding: 12px; margin: 8px 0; border: 1px solid gold; background: black; color: white;" placeholder="Número de documento">
+    </div>  `,
+    background: 'black',
+    color: 'white',
+    showCancelButton: true,
+    confirmButtonText: 'Continuar',
+    cancelButtonText: 'Cancelar',
+    confirmButtonColor: 'gold',
+    cancelButtonColor: 'black',
+    allowOutsideClick: false,
+    preConfirm: () => {
+      return {
+        nombre: (document.getElementById('swal-input1') as HTMLInputElement)?.value,
+        tipoId: (document.getElementById('swal-input2') as HTMLSelectElement)?.value,
+        numeroId: (document.getElementById('swal-input3') as HTMLInputElement)?.value
+      };
+    }
+  });
+
+  if (!formValues?.nombre || !formValues?.tipoId || !formValues?.numeroId) {
+    return; // Usuario canceló o no completó los campos
+  }
+  store.setCliente(formValues.nombre, formValues.tipoId, formValues.numeroId);
+  store.setPedido([...carrito.value]);
+
+
+  carrito.value = [];
+  // Redirigir al panel de cliente
+  router.push('/Cliente');
+  
+  // Limpiar carrito
+  compraExitosa.value = true;
+};
+
+
 // Función para abrir el carrito (al hacer clic en el ícono del carrito)
 const abrirCarrito = () => {
   mostrarModal.value = true;
@@ -118,9 +176,12 @@ const abrirCarrito = () => {
 
 // Modificación en la función cerrarCarrito para permitir continuar comprando
 const cerrarCarrito = () => {
-  compraExitosa.value = false; // Restablecer estado de compra exitosa
-  mostrarModal.value = false;  // Cerrar el modal
+  compraExitosa.value = false;
+  mostrarModal.value = false;
+  // Restaurar scroll del body
+  document.body.style.overflow = '';
 };
+
 
 //esto no lo borre por que es el icon de carrito y el menu scroll
 
@@ -190,16 +251,22 @@ window.addEventListener("scroll", () => {
 
 
   <div>
-  <div v-if="mostrarModal" class="modal">
-    <div class="modal-contenido">
-      <h3 class="te">Carrito de Compras</h3>
-      <p class="tex">Estos son los productos que estás eligiendo para la compra:</p>
+    <transition name="carrito-background">
+    <div v-if="mostrarModal" class="carrito">
+      <div 
+        class="carrito-c" 
+        :style="{ width: carritoWidth + 'px' }"
+        @mousedown="iniciarResize"
+      >
+        <div class="resize-handle"></div>
+        <h3 class="te">Agregados al carrito</h3>
+        <p class="tex">Estos son tus productos:</p>
 
-      <div v-if="compraExitosa" class="mensaje-exito">
-        <h2>¡Compra realizada correctamente!</h2>
-        <p>Gracias por tu compra. Te esperamos pronto.</p>
-        <button @click="cerrarCarrito">Cerrar</button>
-      </div>
+        <div v-if="compraExitosa" class="mensaje-exito">
+          <h2>¡Compra realizada correctamente!</h2>
+          <p>Gracias por tu compra. Te esperamos pronto.</p>
+          <button @click="cerrarCarrito" class="botonx">X</button>
+        </div>
 
       <div v-else>
         <ul class="este">
@@ -228,12 +295,15 @@ window.addEventListener("scroll", () => {
           </li>
         </ul>
 
-        <button @click="Compras" class="boton-comprar">Comprar</button>
-        <button @click="cerrarCarrito" class="boton-cerrar">Cerrar</button>
+        <button @click="comprarProductos" class="boton-comprar">Enviar Pedido</button>
+        <button @click="cerrarCarrito" class="botonx">X</button>
+  
       </div>
     </div>
-  </div>
+    </div>
+</transition>
 </div>
+
 
 
 
@@ -242,8 +312,8 @@ window.addEventListener("scroll", () => {
     <hr id="l3">
     <hr id="l1">
 
-  <div id="cartas-contenedor">
-    <div class="carta" >
+  <div id="cartas-contenedor" name="">
+    <div class="carta">
       <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTXzf81glE2WSVF-jF6Vu7T1C3tNIhyTFzNSQ&s" alt="Amasijo 1" class="carta-imagen" />
       <h3 class="carta-titulo">Almojabana</h3>
       <p class="carta-descripcion">$2.500</p>
@@ -301,13 +371,13 @@ window.addEventListener("scroll", () => {
       <button @click="agregarAlCarrito($event)">Agregar al carrito</button>
     </div>
     <div class="carta">
-      <img src="https://tse3.mm.bing.net/th?id=OIP.2nXm3RYNffPsHS40m6_fZAHaHa&pid=Api&P=0&h=180" alt="Amasijo 3" class="carta-imagen" />
+      <img src="https://supermercadocomunal.com/verbenal/514-large_default/gaseosa-coca-cola-400-ml.jpg" alt="Amasijo 3" class="carta-imagen" />
       <h3 class="carta-titulo">Coca Cola 400ml</h3>
       <p class="carta-descripcion">3.500</p>
       <button @click="agregarAlCarrito($event)">Agregar al carrito</button>
     </div>
     <div class="carta">
-      <img src="https://tse3.mm.bing.net/th?id=OIP.EX_g-S7ZaWw2e4WcVCWUXgHaHa&pid=Api&P=0&h=180" alt="Amasijo 4" class="carta-imagen" />
+      <img src="https://supermercadolaestacion.com/54088-large_default/gaseosa-coca-cola-zero-botella-x-400-mililitros.jpg" alt="Amasijo 4" class="carta-imagen" />
       <h3 class="carta-titulo">Coca Cola zero 400ml</h3>
       <p class="carta-descripcion">$3.500</p>
       <button @click="agregarAlCarrito($event)">Agregar al carrito</button>
@@ -399,7 +469,7 @@ window.addEventListener("scroll", () => {
       <p class="carta-descripcion">$3.000</p>
       <button @click="agregarAlCarrito($event)">Agregar al carrito</button>
     </div>
-    <div class="carta" data-id="1">
+    <div class="carta">
       <img src="https://estaticos.elcolombiano.com/documents/10157/0/792x565/6c0/780d565/none/11101/MYGE/image_content_26048298_20160519204438.jpg" alt="Amasijo 3" class="carta-imagen" />
       <h3 class="carta-titulo">Tinto</h3>
       <p class="carta-descripcion">2.300</p>
@@ -447,35 +517,35 @@ window.addEventListener("scroll", () => {
     <div class="carta">
       <img src="https://i.ytimg.com/vi/_E_ufouNSVA/maxresdefault.jpg" alt="Amasijo 1" class="carta-imagen" />
       <h3 class="carta-titulo">Combo 1</h3>
-      <p class="carta-descripcion">Calentado de frijoles</p>
+      <p class="carta-descripcion1">Calentado de frijoles</p>
       <p class="carta-descripcion">$7.400</p>
       <button @click="agregarAlCarrito($event)">Agregar al carrito</button>
     </div>
     <div class="carta">
       <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQouTvWmgSDy9uAuELay1k9NFAkD7C92CX2Dg&s" alt="Amasijo 2" class="carta-imagen" />
       <h3 class="carta-titulo">Combo 2</h3>
-            <p class="carta-descripcion">Calentado de lentejas</p>
+            <p class="carta-descripcion1">Calentado de lentejas</p>
       <p class="carta-descripcion">$7.000</p>
       <button @click="agregarAlCarrito($event)">Agregar al carrito</button>
     </div>
     <div class="carta">
       <img src="https://i.pinimg.com/originals/4f/99/f5/4f99f59b3692364ff2db6a3418f4103d.jpg" alt="Amasijo 3" class="carta-imagen" />
       <h3 class="carta-titulo">Combo 3</h3>
-      <p class="carta-descripcion">Huevos fritos/pericos</p>
+      <p class="carta-descripcion1">Huevos fritos/pericos</p>
       <p class="carta-descripcion">8.000</p>
       <button @click="agregarAlCarrito($event)">Agregar al carrito</button>
     </div>
     <div class="carta">
       <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRT9j91LLx0TDaL5-jrj427az5fwZ9OFviC0w&s" alt="Amasijo 4" class="carta-imagen" />
             <h3 class="carta-titulo">Combo 4</h3>
-      <p class="carta-descripcion">Huevos con cafe</p>
+      <p class="carta-descripcion1">Huevos con cafe</p>
       <p class="carta-descripcion">8.000</p>
       <button @click="agregarAlCarrito($event)">Agregar al carrito</button>
     </div>
     <div class="carta">
       <img src="https://as2.ftcdn.net/v2/jpg/03/99/65/19/1000_F_399651912_DbqGWOBSWa9ngI2fIZ6JaYfMQyNqhy5l.jpg" alt="Amasijo 4" class="carta-imagen" />
             <h3 class="carta-titulo">Combo 5</h3>
-      <p class="carta-descripcion">Tamal y cafe
+      <p class="carta-descripcion1">Tamal y cafe
       </p>
       <p class="carta-descripcion">9.800</p>
       <button @click="agregarAlCarrito($event)">Agregar al carrito</button>
@@ -608,560 +678,569 @@ window.addEventListener("scroll", () => {
 </template>
 
 <style scoped>
+/* Fuentes y estilos base */
 @import url('https://fonts.googleapis.com/css2?family=Jura:wght@700&display=swap');
 
-  body {
-      font-family: 'Jura', sans-serif;
-      color: black;
+body {
+  font-family: 'Jura', sans-serif;
+  color: black;
+}
+
+/* Estilos para SweetAlert */
+.swal2-popup-zindex {
+  z-index: 9999 !important;
+}
+
+/* Header */
+header {
+  padding: 10px;
+  margin-left: 143px;
+  background-color: #000000;
+}
+
+#text1 {
+  height: 200px;
+  width: 750px;
+  font-family: 'Jura', sans-serif;
+  margin-left: 385px;
+  font-size: 20px;
+  margin-top: -135px;
+  transition: transform 0.3s ease, color 0.3s ease; 
+}
+
+#text1:hover {
+  transform: scale(1.1); 
+  color: #FFF1C6; 
+}
+
+/* Navegación */
+nav {
+  margin-left: -73px;
+}
+
+#menu-inicial {
+  color: #D9AB23;
+  position: relative;
+  z-index: 1000;
+  padding: 15px;
+}
+
+#menu-fijo {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  margin-left: -60px;
+  background-color: #000000;
+  z-index: 1000;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+  transform: translateY(-100%); 
+  transition: transform 0.3s ease; 
+}
+
+#menu-fijo.activo {
+  transform: translateY(0);
+}
+
+.menu-hamburguesa {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+ul.menu {
+  list-style: none;
+  margin-left: 90px;
+  padding: 0;
+  display: flex;
+  gap: 15px;
+}
+
+ul.menu li {
+  font-size: 16px;
+  font-family: 'Jura', sans-serif;
+}
+
+ul.menu li a, 
+ul.menu li router-link {
+  text-decoration: none;
+  color: #D9AB23;
+}
+
+.carrito-icono {
+  margin-left: 5px;
+  font-size: 18px;
+  color: #ffffff;
+  cursor: pointer;
+}
+
+/* Líneas divisoras */
+hr {
+  border-top: 2px solid #D9AB23;
+  width: 1420px;
+  margin-left: 5%;
+  margin-top: -50px;
+}
+
+#l2 {
+  margin-top: 20px;
+  width: 890px;
+  margin-left: 22%;
+}
+
+#l3 {
+  background-color: #D9AB23;
+  border-top: 2px solid #D9AB23;
+  width: 640px;
+  margin-left: 4%;
+  margin-top: -210px;
+}
+
+#l1 {
+  margin-top: -11px;
+  width: 640px;
+  margin-left: 56%;
+}
+
+/* Secciones de productos */
+.section-title {
+  text-align: center;
+  color: #A65814;
+  height: 200px;
+  width: 80px;
+  font-family: 'Jura', sans-serif;
+  margin-left: 740px;
+  font-size: 24px;
+  margin-top: 60px;
+  transition: transform 0.3s ease, color 0.3s ease; 
+}
+
+#desayunos {
+  font-size: 20px;
+}
+
+/* Tarjetas de productos */
+#cartas-contenedor {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+  margin: 50px 4%; 
+}
+
+.carta {
+  background-color: #fffaf0;
+  border: 2px solid #d9ab23;
+  border-radius: 10px;
+  height: 320px;
+  padding: 20px;
+  text-align: center;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.carta:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.carta-imagen {
+  width: 100%;
+  height: 60%;
+  border-radius: 10px;
+  object-fit: cover;
+}
+
+.carta-titulo {
+  font-size: 20px;
+  color: #a65814;
+  margin-top: -5px;
+  font-family: 'Jura', sans-serif;
+}
+
+.carta-descripcion,
+.carta-descripcion1 {
+  font-size: 16px;
+  color: #333;
+  margin-top: -5px;
+  font-family: 'Jura', sans-serif;
+}
+
+/* Botones generales */
+button {
+  background-color: #D9AB23;
+  color: white;
+  padding: 10px 20px; 
+  border: none;
+  border-radius: 5px; 
+  font-size: 16px; 
+  font-family: 'Jura', sans-serif;
+  cursor: pointer; 
+  transition: background-color 0.3s ease, transform 0.2s ease; 
+}
+
+button:hover {
+  background-color: #A65814;
+  transform: scale(1.05); 
+}
+
+button:active {
+  background-color: #000000; 
+  transform: scale(0.98); 
+}
+
+button:disabled {
+  background-color: #b0bec5; 
+  cursor: not-allowed; 
+}
+
+/* Transición para el carrito */
+.carrito-enter-active {
+  animation: slideIn 0.4s ease-out forwards;
+}
+
+.carrito-leave-active {
+  animation: slideOut 0.3s ease-in forwards;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
   }
-
-  header {
-      padding: 10px;
-      margin-left: 143px;
-    background-color: #000000;
-
+  to {
+    transform: translateX(0);
+    opacity: 1;
   }
+}
 
-  #text1 {
-      height: 200px;
-      width: 750px;
-      font-family: 'Jura', sans-serif;
-      margin-left: 275px;
-      font-size: 20px;
-      margin-top: -135px;
-      transition: transform 0.3s ease, color 0.3s ease; 
+@keyframes slideOut {
+  from {
+    transform: translateX(0);
+    opacity: 1;
   }
-
-  #text1:hover {
-      transform: scale(1.1); 
-      color: #FFF1C6; 
+  to {
+    transform: translateX(100%);
+    opacity: 0;
   }
-
-  
-  .modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.5); 
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 9999;
-  }
-
-  .modal-contenido {
-    background-image: url("https://i.postimg.cc/QMwjX2vk/Whats-App-Image-2024-11-23-at-10-53-04-PM.jpg");
-    background-size: cover;
-    background-position: center;
-    background-color: rgba(36, 35, 35, 0.5); 
-    background-blend-mode:saturation;
-    padding: 30px;
-    border-radius: 8px;
-    max-width: 800px;
-    height: 390px;
-    overflow-y: auto;
-    text-align: center;
-  }
+}
 
 
-  
-  .este {
-    display: flex;
-    flex-wrap: wrap; 
-    gap: 20px;  
-  }
+/* Carrito de compras */
+.carrito-c {
+  position: fixed;
+  right: 20px;
+  top: 20px;
+  bottom: 20px;
+  background-color: rgb(0, 0, 0);
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 0 20px rgba(204, 221, 10, 0.759);
+  overflow-y: auto;
+  z-index: 1000;
+  min-width: 350px;
+  max-width: 900px;
+  transition: width 0.1s ease;
+  cursor: default;
+  border: 2px solid #d9ab23;
+  font-family: 'Jura', sans-serif;
+}
 
-  .producto-carrito {
-    width: calc(50% - 25px); /* Mitad del contenedor menos el margen */
-    box-sizing: border-box;
-  }
+.resize-handle {
+  position: absolute;
+  left: -5px;
+  top: 0;
+  bottom: 0;
+  width: 10px;
+  cursor: col-resize;
+  z-index: 10;
+}
 
-  .cantidad-control {
+.resize-handle:hover, 
+.resizing .resize-handle {
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+.resizing {
+  user-select: none;
+  -webkit-user-select: none;
+}
+.carrito-background {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+  transition: opacity 0.3s ease;
+}
+
+.carrito-background-enter-active,
+.carrito-background-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.carrito-background-enter-from,
+.carrito-background-leave-to {
+  opacity: 0;
+}
+
+/* Contenido del carrito */
+.este {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 10px;
+}
+
+.producto-carrito {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.carta1 {
+  background-color: #d9ab23c3;
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgb(84, 80, 80);
+  width: 100%;
+  min-height: 150px;
+  margin: 10px 0;
+  display: grid;
+  grid-template-columns: 1fr 120px;
+  gap: 15px;
+  transition: background-color 0.3s ease-in-out;
+  position: relative;
+  margin-left: -15px;
+}
+
+.carta1:hover {
+  background-color: #fff;
+  color: #000000;
+}
+
+.imagen-producto {
+  width: 100%;
+  height: 120px;
+  object-fit: cover;
+  border-radius: 5px;
+  grid-column: 2;
+  grid-row: 1 / span 4;
+  align-self: center;
+}
+
+.carta1 .t {
+  margin: 5px 0;
+  font-size: 16px;
+  text-align: left;
+  grid-column: 1;
+}
+
+.cantidad-control {
   margin: 10px 0;
   text-align: left;
   font-family: 'Jura', sans-serif;
-  }
+  grid-column: 1;
+}
 
-  .cantidad-control label {
-    font-size: 16px;
-    font-weight: bold;
-    font-family: 'Jura', sans-serif;
-  }
+.cantidad-control label {
+  font-size: 16px;
+  font-weight: bold;
+}
 
-  .cantidad {
-    display: flex;
-    align-items: center;
-    margin-top: 5px;
-    font-family: 'Jura', sans-serif;
-  }
+.cantidad {
+  display: flex;
+  align-items: center;
+  margin-top: 5px;
+}
 
-  .btn-cantidad {
-    background-color: #d9ab23;
-    border: none;
-    color: white;
-    padding: 5px 10px;
-    cursor: pointer;
-    font-size: 18px;
-    font-family: 'Jura', sans-serif;
-    align-items: center;
-    border-radius: 4px;
-  }
+.btn-cantidad {
+  background-color: #d9ab23;
+  border: none;
+  color: white;
+  padding: 5px 10px;
+  cursor: pointer;
+  font-size: 18px;
+  border-radius: 4px;
+}
 
-  .cantidad-control span {
-    margin: 0 10px;
-    font-size: 18px;
-    font-family: 'Jura', sans-serif;
-    align-items: center;
-  }
+.cantidad span {
+  margin: 0 10px;
+  font-size: 18px;
+}
 
-  .precio {
-    margin-top: 10px;
-    text-align: left;
-    font-family: 'Jura', sans-serif;
-    align-items: center;
-  }
+.precio {
+  margin-top: 10px;
+  text-align: left;
+  font-family: 'Jura', sans-serif;
+  grid-column: 1;
+}
 
-  .precio p {
-    margin: 5px 0;
-    font-size: 16px;
-    align-items: center;
-    font-family: 'Jura', sans-serif;
-  }
+.precio p {
+  margin: 5px 0;
+  font-size: 16px;
+}
 
-  .carta1 {
-    background-color: #d9ab23;
-    padding: 15px;
-    border-radius: 8px;
-    text-align: center;
-    box-shadow: 0 4px 8px rgb(84, 80, 80);
-    width: 250px;
-    height: 370px;
-    margin: 0px;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    align-items: center;
-    border-radius: 8px;
-  
-  }
+.eliminar {
+  position: absolute;
+  top: 5px;
+  right: 10px;
+  color: rgb(221, 20, 20);
+  cursor: pointer;
+}
 
-  .imagen-producto {
-    width: 100%;
-    height: 120px;
-    margin-bottom: 10px;
-    object-fit: cover;
-  }
-  .eliminar {
-    color: rgb(193, 46, 46);
-    font-size: 24px;
-    cursor: pointer;
-    display: inline-block;
-    margin-top: 10px;
-  }
+.eliminar:hover {
+  color: rgb(161, 6, 6);
+}
 
-  .eliminar:hover {
-    color: darkred;
-  }
+.boton-comprar {
+  margin-top: 20px;
+  width: 100%;
+  padding: 12px;
+  font-size: 18px;
+}
 
-  .boton-comprar,
-  .boton-cerrar {
-    color: black;
-    padding: 10px 20px;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    margin-top: 230px;
-    margin: 40px;
-  }
+.botonx {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  color: #ff0000;
+  z-index: 10000;
+}
 
-  .boton-comprar {
-    background-color: #d9ab23;
-    color: #ffffff;
-  }
+.botonx:hover {
+  color: #c72121;
+  background-color: #fff;
+}
 
-  .boton-cerrar {
-    background-color: rgb(140, 52, 52);
-    color: #ffffff;
-  }
+.tex {
+  font-size: 18px;
+  color: #ffffff;
+  margin-bottom: 15px;
+  text-align: center;
+  background-color: #A65814;
+  margin-left: -5px;
+}
 
-  .mensaje-exito {
-    color: green;
-  }
-  .tex{
-    font-size: 20px;
-    color: #ffffff;
-    margin-bottom: 15px;
-    font-family: 'Jura', sans-serif;
+.te {
+  font-size: 24px;
+  color: #ffe600;
+  margin-bottom: 15px;
+  text-align: center;
+}
 
-  }
+.t {
+  margin-top: -6px;
+  font-size: 18px;
+  margin-bottom: 10px;
+  font-family: 'Jura', sans-serif;
+}
 
-  .te {
-    font-size: 27px;
-    color: #ffffff;
-    margin-bottom: 15px;
-    font-family: 'Jura', sans-serif;
-  }
+.mensaje-exito {
+  text-align: center;
+}
 
-  .t {
-    margin-top: -6px;
-    font-size: 18px;
-    margin-bottom: 10px;
-    font-family: 'Jura', sans-serif;
-  }
- 
-  .mensaje-exito {
-    text-align: center;
-  }
+.mensaje-exito h2 {
+  color: #afef7a;
+  font-size: 24px;
+  margin-bottom: 10px;
+  font-family: 'Jura', sans-serif;
+}
 
-  .mensaje-exito h2 {
-    color: #afef7a;
-    font-size: 24px;
-    margin-bottom: 10px;
-    font-family: 'Jura', sans-serif;
-  }
+.mensaje-exito p {
+  color: #d9ab23;
+  font-size: 16px;
+  margin-bottom: 20px;
+  font-family: 'Jura', sans-serif;
+}
 
-  .mensaje-exito p {
-    color: #d9ab23;
-    font-size: 16px;
-    margin-bottom: 20px;
-    font-family: 'Jura', sans-serif;
-  }
+.eliminar {
+  color: rgb(221, 20, 20);
+  font-size: 24px;
+  cursor: pointer;
+  display: inline-block;
+  margin-top: 10px;
+}
 
+.eliminar:hover {
+  color: rgb(237, 143, 143);
+}
 
+/* Footer */
+footer {
+  padding: 20px;
+  text-align: center;
+  margin-top: 94px;
+}
 
-  nav {
-      margin-left: -73px;
-  }
+.wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 90%;
+  margin: 0 auto;
+  padding: 20px;
+  background-color: #000;
+  border-radius: 15px;
+}
 
-  #menu-inicial {
-      color:#D9AB23;
-      position: relative;
-      z-index: 1000;
-      padding: 15px ;
-    }
+.wrapper .icon {
+  position: relative;
+  background: #000000;
+  border-radius: 50%;
+  margin: 10px;
+  width: 50px;
+  height: 50px;
+  font-size: 18px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
 
-    #menu-fijo {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      margin-left: -60px;
-      background-color: #000000;
-      z-index: 1000;
-      box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
-      transform: translateY(-100%); 
-      transition: transform 0.3s ease; 
-    }
-    
-    .menu-hamburguesa {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
+.wrapper .tooltip {
+  position: absolute;
+  top: 0;
+  font-size: 14px;
+  background: #fff;
+  color: #fff;
+  padding: 5px 8px;
+  border-radius: 5px;
+  box-shadow: 0 10px 10px rgba(0, 0, 0, 0.1);
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
 
-    ul.menu {
-      list-style: none;
-      margin-left: 90px;
-      padding: 0;
-      display: flex;
-      gap: 15px;
-    }
+.wrapper .tooltip::before {
+  position: absolute;
+  content: "";
+  height: 8px;
+  width: 8px;
+  background: #fff;
+  bottom: -3px;
+  left: 50%;
+  transform: translate(-50%) rotate(45deg);
+}
 
-    ul.menu li {
-      font-size: 16px;
-      font-family: Arial, sans-serif;
-    }
+.wrapper .icon:hover .tooltip {
+  top: -45px;
+  opacity: 1;
+  visibility: visible;
+}
 
-    ul.menu li a, ul.menu li router-link {
-      text-decoration: none;
-      color: #D9AB23;
-    }
-
-    #menu-fijo.activo {
-      transform: translateY(0); /* Muestra el menú fijo */
-    }
-
-
-
-
-  nav ul {
-      list-style: none;
-      display: flex;
-      justify-content: space-evenly;
-      margin-left: -194px;
-      margin-top: 33px;
-  }
-
-  nav li a {
-      font-family: 'Jura', sans-serif;
-      text-decoration: none;
-      color:#D9AB23;;
-      padding: 10px;
-  }
-
-  hr {
-      border-top: 2px solid #D9AB23;
-      width: 1140px;
-      margin-left: 4%;
-      margin-top: -50px;
-  }
-
-  #l2 {
-      margin-top: 20px;
-      width: 700px;
-      margin-left: 22%;
-
-  }
-
-
-  #amasijos{
-      text-align: center;
-      color:#A65814;
-      height: 200px;
-      width: 80px;
-      font-family: 'Jura', sans-serif;
-      margin-left: 660px;
-      font-size: 24px;
-      margin-top: 60px;
-      transition: transform 0.3s ease, color 0.3s ease; 
-  }
-  #bebidas-frias{
-    text-align: center;
-      color:#A65814;
-      height: 200px;
-      width: 80px;
-      font-family: 'Jura', sans-serif;
-      margin-left: 660px;
-      font-size: 24px;
-      margin-top: 60px;
-      transition: transform 0.3s ease, color 0.3s ease; 
-  }
-  #bebidas-calientes{
-    text-align: center;
-      color:#A65814;
-      height: 200px;
-      width: 80px;
-      font-family: 'Jura', sans-serif;
-      margin-left: 660px;
-      font-size: 24px;
-      margin-top: 60px;
-      transition: transform 0.3s ease, color 0.3s ease; 
-  }
-  #desayunos{
-    text-align: center;
-      color:#A65814;
-      height: 200px;
-      width: 80px;
-      font-family: 'Jura', sans-serif;
-      margin-left: 660px;
-      font-size: 20px;
-      margin-top: 60px;
-      transition: transform 0.3s ease, color 0.3s ease; 
-  }
-  #hojaldres{
-    text-align: center;
-      color:#A65814;
-      height: 200px;
-      width: 80px;
-      font-family: 'Jura', sans-serif;
-      margin-left: 660px;
-      font-size: 24px;
-      margin-top: 60px;
-      transition: transform 0.3s ease, color 0.3s ease; 
-  }
-  #malteadas{
-    text-align: center;
-      color:#A65814;
-      height: 200px;
-      width: 80px;
-      font-family: 'Jura', sans-serif;
-      margin-left: 660px;
-      font-size: 24px;
-      margin-top: 60px;
-      transition: transform 0.3s ease, color 0.3s ease; 
-  }
-  .carrito-icono {
-    margin-left: 5px;
-    font-size: 18px;
-    color: #ffffff;
-    cursor: pointer;
-  }
-
-  #l3 {
-      background-color: #D9AB23;
-      border-top: 2px solid #D9AB23;
-      width: 500px;
-      margin-left: 4%;
-      margin-top: -210px;
-      
-  }
-
-  #l1 {
-      margin-top: -11px;
-      width: 500px;
-      margin-left: 56%;
-  }
-
-
-  #cartas-contenedor {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 20px;
-    margin: 50px 4%; 
-  }
-
-  .carta {
-    background-color: #fffaf0;
-    border: 2px solid #d9ab23;
-    border-radius: 10px;
-    height: 320px;
-    padding: 20px;
-    text-align: center;
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-  }
-
-  .carta:hover {
-    transform: scale(1.05);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-  }
-
-  .carta-imagen {
-    width: 100%;
-    height: 60%;
-    border-radius: 10px;
-  }
-
-  .carta-titulo {
-    font-size: 20px;
-    color: #a65814;
-    margin-top: -5px;
-    font-family: 'Jura', sans-serif;
-  }
-
-  .carta-descripcion {
-    font-size: 16px;
-    color: #333;
-    margin-top: -5px;
-    font-family: 'Jura', sans-serif;
-  }
-
-  button {
-    background-color: #D9AB23;
-    color: white;
-    padding: 10px 20px; 
-    border: none;
-    border-radius: 5px; 
-    font-size: 16px; 
-    font-family: 'Jura', sans-serif;
-    cursor: pointer; 
-    transition: background-color 0.3s ease, transform 0.2s ease; 
-  }
-
-  button:hover {
-    background-color: #A65814;
-    transform: scale(1.05); 
-  }
-
-  button:active {
-    background-color: #000000; 
-    transform: scale(0.98); 
-  }
-
-  button:disabled {
-    background-color: #b0bec5; 
-    cursor: not-allowed; 
-  }
-
-
-
-
-  footer {
-      padding: 20px;
-      text-align: center;
-      margin-top: 94px;
-  }
-
-  .wrapper {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      width: 90%;
-      margin: 0 auto;
-      padding: 20px;
-      background-color: #000;
-      border-radius: 15px;
-  }
-
-  .wrapper .icon {
-      position: relative;
-      background: #000000;
-      border-radius: 50%;
-      margin: 10px;
-      width: 50px;
-      height: 50px;
-      font-size: 18px;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      cursor: pointer;
-      transition: all 0.2s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-  }
-
-  .wrapper .tooltip {
-      position: absolute;
-      top: 0;
-      font-size: 14px;
-      background: #fff;
-      color: #fff;
-      padding: 5px 8px;
-      border-radius: 5px;
-      box-shadow: 0 10px 10px rgba(0, 0, 0, 0.1);
-      opacity: 0;
-      pointer-events: none;
-      transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-  }
-
-  .wrapper .tooltip::before {
-      position: absolute;
-      content: "";
-      height: 8px;
-      width: 8px;
-      background: #fff;
-      bottom: -3px;
-      left: 50%;
-      transform: translate(-50%) rotate(45deg);
-  }
-
-  .wrapper .icon:hover .tooltip {
-      top: -45px;
-      opacity: 1;
-      visibility: visible;
-  }
-
-  .wrapper .facebook:hover,
-  .wrapper .facebook:hover .tooltip,
-  .wrapper .facebook:hover .tooltip::before {
-      background: #1877f2;
-      color: #fff;
-  }
-
-  .wrapper .twitter:hover,
-  .wrapper .twitter:hover .tooltip,
-  .wrapper .twitter:hover .tooltip::before {
-      background: #00acee;
-      color: #fff;
-  }
-
-  .wrapper .instagram:hover,
-  .wrapper .instagram:hover .tooltip,
-  .wrapper .instagram:hover .tooltip::before {
-      background: #dd2a7b;
-      color: #fff;
-  }
-
- @media (min-width: 280px) and (max-width: 490px) {
+.wrapper .instagram:hover,
+.wrapper .instagram:hover .tooltip,
+.wrapper .instagram:hover .tooltip::before {
+  background: #dd2a7b;
+  color: #fff;
+}
+@media (min-width: 280px) and (max-width: 490px) {
     body {
         font-size: 10px; 
     }

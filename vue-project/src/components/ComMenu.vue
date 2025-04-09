@@ -108,8 +108,8 @@ const eliminarProducto = (index: number) => {
 let carritoFacturado = []; // Variable global para guardar la compra
 
 
-// Mostrar formulario para datos del cliente
-const comprarProductos = async () => {
+  // Función para comprar los productos con validación
+  const comprarProductos = async () => {
   if (carrito.value.length === 0) {
     await Swal.fire({
       icon: "warning",
@@ -118,56 +118,125 @@ const comprarProductos = async () => {
       allowOutsideClick: false,
       allowEscapeKey: false,
       backdrop: true,
+      width: '600px', // Tamaño más grande
+      customClass: {
+        popup: 'custom-swal-popup', // Clase personalizada
+        icon: 'custom-swal-icon' // Clase para el icono
+      }
     });
     return;
   }
 
-  // Configuración simplificada y más robusta
+  // Configuración del formulario con tamaño aumentado
   const { value: formValues } = await Swal.fire({
-  title: '<span style="font-family: \'Jura\', sans-serif">Datos del cliente</span>',
-  html: `
-    <div style="font-family: 'Jura', sans-serif">
-      <input id="swal-input1" style="font-family: inherit; width: 95%; padding: 12px; margin: 8px 0; border: 1px solid gold; background: black; color: white;" placeholder="Nombre completo">
-      <select id="swal-input2" style="font-family: inherit; width: 95%; padding: 12px; margin: 8px 0; border: 1px solid gold; background: black; color: white;">
-        <option value="">Tipo de documento</option>
-        <option value="C.C">Cédula de ciudadania</option>
-        <option value="C.C">Cédula de extranjeria</option>
-        <option value="T.I">Tarjeta de Identidad</option>
-      </select>
-      <input id="swal-input3" style="font-family: inherit; width: 95%; padding: 12px; margin: 8px 0; border: 1px solid gold; background: black; color: white;" placeholder="Número de documento">
-    </div>  `,
+    title: '<span style="font-family: \'Jura\', sans-serif; font-size: 1.5rem">Datos del cliente</span>',
+    html: `
+      <div style="font-family: 'Jura', sans-serif; font-size: 1.1rem">
+        <input id="swal-input1" style="font-family: inherit; width: 95%; padding: 15px; margin: 12px 0; border: 1px solid gold; background: black; color: white; font-size: 1rem" placeholder="Nombre completo">
+        <select id="swal-input2" style="font-family: inherit; width: 95%; padding: 15px; margin: 12px 0; border: 1px solid gold; background: black; color: white; font-size: 1rem">
+          <option value="">Tipo de documento</option>
+          <option value="C.C">Cédula de ciudadanía</option>
+          <option value="C.E">Cédula de extranjería</option>
+          <option value="T.I">Tarjeta de Identidad</option>
+        </select>
+        <input id="swal-input3" style="font-family: inherit; width: 95%; padding: 15px; margin: 12px 0; border: 1px solid gold; background: black; color: white; font-size: 1rem" placeholder="Número de documento" type="number" maxlength="10">
+      </div>`,
     background: 'black',
     color: 'white',
+    width: '650px', 
+    padding: '2rem',
     showCancelButton: true,
     confirmButtonText: 'Continuar',
     cancelButtonText: 'Cancelar',
     confirmButtonColor: 'gold',
-    cancelButtonColor: 'black',
+    cancelButtonColor: '#333',
     allowOutsideClick: false,
+    focusConfirm: false,
+    customClass: {
+      popup: 'custom-swal-popup',
+      header: 'custom-swal-header',
+      title: 'custom-swal-title',
+      content: 'custom-swal-content',
+      actions: 'custom-swal-actions',
+      confirmButton: 'custom-swal-confirm',
+      cancelButton: 'custom-swal-cancel'
+    },
     preConfirm: () => {
-      return {
-        nombre: (document.getElementById('swal-input1') as HTMLInputElement)?.value,
-        tipoId: (document.getElementById('swal-input2') as HTMLSelectElement)?.value,
-        numeroId: (document.getElementById('swal-input3') as HTMLInputElement)?.value
-      };
+      const nombre = (document.getElementById('swal-input1') as HTMLInputElement)?.value.trim();
+      const tipoId = (document.getElementById('swal-input2') as HTMLSelectElement)?.value;
+      const numeroId = (document.getElementById('swal-input3') as HTMLInputElement)?.value.trim();
+      
+      // Validación del nombre
+      if (!nombre || nombre.split(' ').length < 2) {
+        Swal.showValidationMessage('<span style="color: #ff4444; font-size: 1rem; font-family: Jura, sans-serif">Debe ingresar nombre y apellido completos</span>');
+        return false;
+      }
+      
+      // Validación del tipo de documento
+      if (!tipoId) {
+        Swal.showValidationMessage('<span style="color: #ff4444; font-size: 1rem; font-family: Jura, sans-serif">Seleccione un tipo de documento valido</span>');
+        return false;
+      }
+      
+      // Validación del documento
+      if (!numeroId) {
+        Swal.showValidationMessage('<span style="color: #ff4444; font-size: 1rem;font-family: Jura, sans-serif">El numero de documento es obligatorio</span>');
+        return false;
+      }
+      
+      if (!/^\d+$/.test(numeroId)) {
+        Swal.showValidationMessage('<span style="color: #ff4444; font-size: 1rem; font-family: Jura, sans-serif">Solo se permiten números en el documento</span>');
+        return false;
+      }
+      
+      if (numeroId.length < 8 || numeroId.length > 10) {
+        Swal.showValidationMessage('<span style="color: #ff4444; font-size: 1rem;font-family: Jura, sans-serif">El documento debe tener entre 8 y 10 dígitos</span>');
+        return false;
+      }
+      
+      return { nombre, tipoId, numeroId };
     }
   });
 
-  if (!formValues?.nombre || !formValues?.tipoId || !formValues?.numeroId) {
-    return; // Usuario canceló o no completó los campos
+  // Si falla la validación
+  if (!formValues) {
+    await Swal.fire({
+      icon: 'error',
+      title: '<span style="font-family: \'Jura\', sans-serif; color: #ff4444">Error en los datos</span>',
+      html: '<div style="font-family: \'Jura\', sans-serif; font-size: 1.2rem">Verifique que todos los campos esten correctamente diligenciados</div>',
+      width: '600px',
+      background: 'white',
+      confirmButtonColor: 'gold',
+      customClass: {
+        popup: 'custom-swal-popup-error',
+        icon: 'custom-swal-icon-error',
+        title: 'custom-swal-title-error'
+      }
+    });
+    return;
   }
+
+  // Si pasa la validación
   store.setCliente(formValues.nombre, formValues.tipoId, formValues.numeroId);
   store.setPedido([...carrito.value]);
 
+  await Swal.fire({
+    icon: 'success',
+    title: '<span style="font-family: \'Jura\', sans-serif">¡Validación exitosa!</span>',
+    html: '<div style="font-family: \'Jura\', sans-serif; font-size: 1.2rem">Los datos han sido verificados correctamente</div>',
+    width: '600px',
+    background: 'white',
+    confirmButtonColor: 'gold',
+    customClass: {
+      popup: 'custom-swal-popup-success',
+      icon: 'custom-swal-icon-success'
+    }
+  });
 
   carrito.value = [];
-  // Redirigir al panel de cliente
-  router.push('/Cliente');
-  
-  // Limpiar carrito
+  router.push('/Clientes');
   compraExitosa.value = true;
 };
-
 
 // Función para abrir el carrito (al hacer clic en el ícono del carrito)
 const abrirCarrito = () => {
@@ -1168,6 +1237,59 @@ button:disabled {
 
 .eliminar:hover {
   color: rgb(237, 143, 143);
+}
+
+/* Estilos para sweetalert */
+.custom-swal-popup {
+  border: 2px solid gold !important;
+  border-radius: 10px !important;
+  font-family: 'Jura', sans-serif;
+}
+
+.custom-swal-icon {
+  font-size: 3rem !important;
+  margin: 1rem auto !important;
+  font-family: 'Jura', sans-serif;
+}
+
+/* Estilos específicos para errores */
+.custom-swal-popup-error {
+  border: 2px solid #ff4444 !important;
+  font-family: 'Jura', sans-serif;
+}
+
+.custom-swal-icon-error {
+  color: #ff4444 !important;
+  font-size: 4rem !important;
+  margin: 1.5rem auto !important;
+  font-family: 'Jura', sans-serif;
+}
+
+.custom-swal-title-error {
+  color: #ff4444 !important;
+  font-size: 1.8rem !important;
+  font-family: 'Jura', sans-serif;
+}
+
+/* Estilos para los botones */
+.custom-swal-confirm {
+  font-family: 'Jura', sans-serif !important;
+  font-weight: bold !important;
+  font-size: 1.1rem !important;
+  padding: 10px 25px !important;
+}
+
+.custom-swal-cancel {
+  font-family: 'Jura', sans-serif !important;
+  font-size: 1.1rem !important;
+  padding: 10px 25px !important;
+}
+
+/* Ajustes de contenido */
+.custom-swal-content {
+  font-size: 1.1rem !important;
+  line-height: 1.6 !important;
+  font-family: 'Jura', sans-serif;
 }
 
 /* Footer */

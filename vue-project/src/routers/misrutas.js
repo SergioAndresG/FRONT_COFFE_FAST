@@ -22,8 +22,11 @@ import ComSesion from "@/components/ComSesion.vue";
 import SnowFall from "@/components/SnowFall.vue";
 import { createRouter, createWebHistory } from "vue-router";
 import ComConProC from "@/components/ComConProC.vue";
-import ComPCliente from "@/components/ComPCliente.vue";
 import ComPedido from "@/components/ComPedido.vue";
+import ComPCliente2 from "@/components/ComPCliente2.vue";
+import ComPFacturas from "@/components/ComPFacturas.vue";
+
+
 
 const routes = [
     {
@@ -144,14 +147,19 @@ const routes = [
         component: ComConProC
     },
     {
-        path: "/Cliente",
-        name: "Cliente",
-        component: ComPCliente
+        path: "/Clientes",
+        name: "Clientes",
+        component: ComPCliente2
     },
     {
         path: "/Pedidos",
         name: "Pedidos",
         component: ComPedido
+    },
+    {
+        path: "/Facturas",
+        name: "Facturas",
+        component: ComPFacturas
     },
 ]
 

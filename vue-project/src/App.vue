@@ -16,7 +16,7 @@ body, router-view {
   margin: 0;
   padding: 0;
   background-color: black;
-  height: 100%; /* Aseguramos que ocupe toda la pantalla */
+  height: 100%; 
   color: white; /* Texto visible */
 }
 

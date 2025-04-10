@@ -271,26 +271,7 @@ const closeModal = () => {
           </div>
         </div>
         
-        <div class="perfil-adicional">
-          <h2>Información Adicional</h2>
-          <div class="tarjetas-info">
-            <div class="tarjeta">
-              <i class="fas fa-clock"></i>
-              <h3>Horario de Trabajo</h3>
-              <p>Tiempo completo</p>
-            </div>
-            <div class="tarjeta">
-              <i class="fas fa-calendar-alt"></i>
-              <h3>Días Trabajados</h3>
-              <p>15 días este mes</p>
-            </div>
-            <div class="tarjeta">
-              <i class="fas fa-money-bill-wave"></i>
-              <h3>Último Pago</h3>
-              <p>$1,500.000 COP</p>
-            </div>
-          </div>
-        </div>
+        
       </div>
     </div>
   </div>

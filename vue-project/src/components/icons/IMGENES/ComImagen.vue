@@ -14,16 +14,12 @@
 .contenedor{
   display: flex;
 }
-@media screen and (min-width: 280px) and (max-width: 490px){
+
+@media (max-width: 767px) {
   .imagen {
-  display: flex;
-  height: 80px;
-  width: 150px; 
-  margin-left: -49px;
-  margin-top: -30px;
+    width: 150px !important;
+    height: 130px !important;
+  }
 }
-.contenedor{
-  display: flex;
-}
-}
+
 </style>

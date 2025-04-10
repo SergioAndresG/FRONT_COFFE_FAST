@@ -1,29 +1,67 @@
 <script setup lang="ts">
-import { ref, onBeforeUnmount, onMounted } from 'vue';
+import { ref, onBeforeUnmount, onMounted, computed } from 'vue';
 import ComImagen from './icons/IMGENES/ComImagen.vue';
 import Swal from "sweetalert2";  // Aseguye de importar SweetAlert2
 import { useRouter } from 'vue-router';
-import { store } from './datos' //Importacion para guardar los datos y lo que se pida en el menu para el panel de clienets
+import axios from 'axios';
 
 const router = useRouter();
 
 interface Producto {
+  id: number,
   nombre: string;
   precio: number;
-  imagen: string;
-  cantidad: number; // Agregar campo cantidad
+  ruta_imagen: string;
+  categoria: string;
+  cantidad: number;
 }
 
 // Ejemplo de los datos o interfaz de los productos
 const carrito = ref<Producto[]>([]);
 const mostrarModal = ref(false);
 const compraExitosa = ref(false);
-
+const categorias = ref<string[]>([]);
+const productos = ref<Producto[]>([]);
 
 const carritoWidth = ref(350); 
 const isResizing = ref(false);
 const startX = ref(0);
 const startWidth = ref(0);
+
+const obtenerProductos = async () => {
+  try {
+    const response = await axios.get('http://localhost:8000/productos');
+    productos.value = response.data.map((p: any) => ({
+      id: p.id,
+      nombre: p.nombre,
+      precio: p.precio_unitario, 
+      ruta_imagen: p.ruta_imagen,
+      categoria: p.categoria,
+      cantidad: 1
+    }));
+  } catch (error) {
+    console.error('Error al obtener productos:', error);
+  }
+};
+
+onMounted(async() => {
+  await obtenerProductos();
+  console.log(carrito.value);
+});
+
+async function obtenerCategorias() {
+  try {
+    const response = await axios.get("http://localhost:8000/productos/categorias");
+    categorias.value = response.data;
+  } catch (error) {
+    console.error("Error al obtener categorías:", error);
+  }
+}
+
+onMounted(() => {
+  obtenerCategorias();
+});
+
 
 //Redimensionar el carrito de productos
 const iniciarResize = (e: MouseEvent) => {
@@ -62,26 +100,57 @@ onBeforeUnmount(() => {
 });
 
 // Agregar al carrito (si el producto ya existe, solo aumentamos la cantidad)
-const agregarAlCarrito = (event: MouseEvent) => {
-  const carta = (event.target as HTMLButtonElement).closest('.carta')!;
-  const nombre = carta.querySelector('.carta-titulo')?.textContent || '';
-  const precio = parseFloat(carta.querySelector('.carta-descripcion')?.textContent?.replace('$', '').replace('.', '') || '0');
-  const imagen = (carta.querySelector('.carta-imagen') as HTMLImageElement).src;
-
-  const productoExistente = carrito.value.find(p => p.nombre === nombre);
+// Agregar al carrito (si el producto ya existe, solo aumentamos la cantidad)
+const agregarAlCarrito = (producto: Producto) => {
+  const productoExistente = carrito.value.find(p => p.id === producto.id);
   if (productoExistente) {
     productoExistente.cantidad += 1; // Incrementar la cantidad si ya existe
   } else {
-    const producto: Producto = { nombre, precio, imagen, cantidad: 1 }; // Cantidad inicial
-    carrito.value.push(producto);
+    carrito.value.push({ ...producto, cantidad: 1});
   }
 
   Swal.fire({
     icon: "success",
     title: "El producto ha sido agregado",
-    text: `Agregado al carrito: ${nombre}`,
+    text: `Agregado al carrito: ${producto.nombre}`,
   });
+  console.log("Producto recibido:", producto);
+
 };
+
+
+
+//Computed para filtrar los productos por categoría
+//AMASIJOS
+const productosAmasijos = computed(() =>
+productos.value.filter(p => p.categoria.toUpperCase() === "AMASIJOS")
+);
+
+//BEBIDAS FRIAS
+const productosBFRIAS = computed(() =>
+productos.value.filter(p => p.categoria.toUpperCase() === "BEBIDAS_FRIAS")
+);
+
+//BEBIDAS CALIENTES
+const productosBCALIENTES = computed(() =>
+productos.value.filter(p => p.categoria.toUpperCase() === "BEBIDAS_CALIENTES")
+);
+
+//DESAYUNOS
+const productosDESAYUNOS = computed(() =>
+productos.value.filter(p => p.categoria.toUpperCase() === "DESAYUNOS")
+);
+
+//HOJALDRES
+const productosHOJALDRES = computed(() =>
+productos.value.filter(p => p.categoria.toUpperCase() === "HOJALDRES")
+);
+
+//MALTEADAS
+const productosMALTEADAS = computed(() =>
+productos.value.filter(p => p.categoria.toUpperCase() === "MALTEADAS")
+);
+
   
 
 // Función para aumentar la cantidad
@@ -106,12 +175,86 @@ const eliminarProducto = (index: number) => {
 // Funcion para comprar los productos y para mostrar la factura a la hora de la compra
 
 let carritoFacturado = []; // Variable global para guardar la compra
+const finalizarCompra = async (clienteData) => {
+  try {
+    const total = carrito.value.reduce((sum, producto) => {
+      return sum + (producto.precio * producto.cantidad);
+    }, 0);
 
+    const productosParaEnviar = carrito.value.map(producto => ({
+        producto_id: producto.id,
+        cantidad: producto.cantidad,
+        precio_unitario: producto.precio
+    }));
 
-// Mostrar formulario para datos del cliente
+    const pedidoData = {
+      cliente_id: clienteData.clienteId, 
+      fecha: new Date().toISOString(),
+      total: total,
+      estado: "nuevo",
+      factura_id: null,
+      productos: productosParaEnviar,
+    };
+    console.log("Productos para enviar:", productosParaEnviar);
+
+    const response = await axios.post("http://localhost:8000/pedidos", pedidoData);
+    
+    if (response.status === 200 || response.status === 201) {
+      // Guardar información importante en localStorage para recuperarla en la vista de cliente
+      localStorage.setItem('cliente_actual', JSON.stringify({
+        nombre: clienteData.nombre,
+        tipoId: clienteData.tipoId,
+        numeroId: clienteData.numeroId
+      }));
+      
+      if (response.data && response.data.pedido_id) {
+        localStorage.setItem('pedido_id', response.data.pedido_id);
+      } else if (response.data && response.data.id) {
+        // Alternativa si la API devuelve el ID con otro nombre
+        localStorage.setItem('pedido_id', response.data.id.toString());
+      }
+      
+      // Vaciar carrito
+      carrito.value = [];
+      compraExitosa.value = true;
+      mostrarModal.value = false;
+      
+      // Mostrar alerta y después redireccionar
+      await Swal.fire({
+        icon: "success",
+        title: "Pedido enviado correctamente",
+        text: `Tu pedido ha sido registrado correctamente.`,
+        confirmButtonText: "Ver estado del pedido"
+      });
+      
+      // Redireccionar DESPUÉS de que el usuario cierre la alerta
+      const pedidoId = response.data.pedido_id || response.data.id;
+      router.push({
+        path: '/Clientes',
+        query: { 
+          pedidoId: pedidoId,
+          clienteId: clienteData.numeroId,
+          nombre: clienteData.nombre,
+          tipoId: clienteData.tipoId
+        }
+      });
+    }
+  } catch (error) {
+    console.error("Error al enviar el pedido:", error);
+    Swal.fire({
+      icon: "error",
+      title: "Error al enviar el pedido",
+      text: error.response?.data?.detail || "Ocurrió un error inesperado."
+    });
+  }
+};
+
 const comprarProductos = async () => {
   if (carrito.value.length === 0) {
-    await Swal.fire({
+    mostrarModal.value = false;
+    Swal.close();
+
+    Swal.fire({
       icon: "warning",
       title: "Carrito vacío",
       text: "No hay productos en el carrito para comprar.",
@@ -119,53 +262,142 @@ const comprarProductos = async () => {
       allowEscapeKey: false,
       backdrop: true,
     });
+
     return;
   }
 
-  // Configuración simplificada y más robusta
+  let mensaje = "<h3>Resumen de tu compra:</h3><ul style='text-align:left'>";
+  let totalCompra = 0;
+  carrito.value.forEach((producto) => {
+    let totalProducto = producto.precio * producto.cantidad;
+    mensaje += `<li><strong>Producto:</strong> ${producto.nombre} <br>  
+                <strong>Cantidad:</strong> ${producto.cantidad} <br> 
+                <strong>Precio unitario:</strong> $${producto.precio} <br> 
+                <strong>Total:</strong> $${totalProducto}</li><hr>`;
+    totalCompra += totalProducto;
+  });
+  mensaje += `</ul><h2>Total a pagar: $${totalCompra}</h2>`;
+
+  mostrarModal.value = false;
+  
+  await Swal.fire({
+    icon: "info",
+    title: "Resumen de la compra",
+    html: mensaje,
+    confirmButtonText: "Continuar",
+    allowOutsideClick: false,
+    allowEscapeKey: false,
+    backdrop: true,
+  });
+
+  
+  // Configuración del formulario con tamaño aumentado
   const { value: formValues } = await Swal.fire({
-  title: '<span style="font-family: \'Jura\', sans-serif">Datos del cliente</span>',
-  html: `
-    <div style="font-family: 'Jura', sans-serif">
-      <input id="swal-input1" style="font-family: inherit; width: 95%; padding: 12px; margin: 8px 0; border: 1px solid gold; background: black; color: white;" placeholder="Nombre completo">
-      <select id="swal-input2" style="font-family: inherit; width: 95%; padding: 12px; margin: 8px 0; border: 1px solid gold; background: black; color: white;">
-        <option value="">Tipo de documento</option>
-        <option value="C.C">Cédula de ciudadania</option>
-        <option value="C.C">Cédula de extranjeria</option>
-        <option value="T.I">Tarjeta de Identidad</option>
-      </select>
-      <input id="swal-input3" style="font-family: inherit; width: 95%; padding: 12px; margin: 8px 0; border: 1px solid gold; background: black; color: white;" placeholder="Número de documento">
-    </div>  `,
+    title: '<span style="font-family: \'Jura\', sans-serif; font-size: 1.5rem">Datos del cliente</span>',
+    html: `
+      <div style="font-family: 'Jura', sans-serif; font-size: 1.1rem">
+        <input id="swal-input1" style="font-family: inherit; width: 95%; padding: 15px; margin: 12px 0; border: 1px solid gold; background: black; color: white; font-size: 1rem" placeholder="Nombre completo">
+        <select id="swal-input2" style="font-family: inherit; width: 95%; padding: 15px; margin: 12px 0; border: 1px solid gold; background: black; color: white; font-size: 1rem">
+          <option value="">Tipo de documento</option>
+          <option value="cedula_de_ciudadania">Cédula de ciudadanía</option>
+          <option value="Ccedula_de_extranjeria">Cédula de extranjería</option>
+          <option value="tarjeta_identidad">Tarjeta de Identidad</option>
+        </select>
+        <input id="swal-input3" style="font-family: inherit; width: 95%; padding: 15px; margin: 12px 0; border: 1px solid gold; background: black; color: white; font-size: 1rem" placeholder="Número de documento" type="number" maxlength="10">
+      </div>`,
     background: 'black',
     color: 'white',
+    width: '650px', 
+    padding: '2rem',
     showCancelButton: true,
     confirmButtonText: 'Continuar',
     cancelButtonText: 'Cancelar',
     confirmButtonColor: 'gold',
-    cancelButtonColor: 'black',
+    cancelButtonColor: '#333',
     allowOutsideClick: false,
+    focusConfirm: false,
+    customClass: {
+      popup: 'custom-swal-popup',
+      header: 'custom-swal-header',
+      title: 'custom-swal-title',
+      content: 'custom-swal-content',
+      actions: 'custom-swal-actions',
+      confirmButton: 'custom-swal-confirm',
+      cancelButton: 'custom-swal-cancel'
+    },
     preConfirm: () => {
-      return {
-        nombre: (document.getElementById('swal-input1') as HTMLInputElement)?.value,
-        tipoId: (document.getElementById('swal-input2') as HTMLSelectElement)?.value,
-        numeroId: (document.getElementById('swal-input3') as HTMLInputElement)?.value
-      };
+      const nombre = (document.getElementById('swal-input1') as HTMLInputElement)?.value.trim();
+      const tipoId = (document.getElementById('swal-input2') as HTMLSelectElement)?.value;
+      const numeroId = (document.getElementById('swal-input3') as HTMLInputElement)?.value.trim();
+      
+      // Validación del nombre
+      if (!nombre || nombre.split(' ').length < 2) {
+        Swal.showValidationMessage('<span style="color: #ff4444; font-size: 1rem; font-family: Jura, sans-serif">Debe ingresar nombre y apellido completos</span>');
+        return false;
+      }
+      
+      // Validación del tipo de documento
+      if (!tipoId) {
+        Swal.showValidationMessage('<span style="color: #ff4444; font-size: 1rem; font-family: Jura, sans-serif">Seleccione un tipo de documento valido</span>');
+        return false;
+      }
+      
+      // Validación del documento
+      if (!numeroId) {
+        Swal.showValidationMessage('<span style="color: #ff4444; font-size: 1rem;font-family: Jura, sans-serif">El numero de documento es obligatorio</span>');
+        return false;
+      }
+      
+      if (!/^\d+$/.test(numeroId)) {
+        Swal.showValidationMessage('<span style="color: #ff4444; font-size: 1rem; font-family: Jura, sans-serif">Solo se permiten números en el documento</span>');
+        return false;
+      }
+      
+      if (numeroId.length < 8 || numeroId.length > 10) {
+        Swal.showValidationMessage('<span style="color: #ff4444; font-size: 1rem;font-family: Jura, sans-serif">El documento debe tener entre 8 y 10 dígitos</span>');
+        return false;
+      }
+      
+      return { nombre, tipoId, numeroId };
     }
   });
 
-  if (!formValues?.nombre || !formValues?.tipoId || !formValues?.numeroId) {
-    return; // Usuario canceló o no completó los campos
+  // Si falla la validación
+  if (!formValues) {
+    await Swal.fire({
+      icon: 'error',
+      title: '<span style="font-family: \'Jura\', sans-serif; color: #ff4444">Error en los datos</span>',
+      html: '<div style="font-family: \'Jura\', sans-serif; font-size: 1.2rem">Verifique que todos los campos esten correctamente diligenciados</div>',
+      width: '600px',
+      background: 'white',
+      confirmButtonColor: 'gold',
+      customClass: {
+        popup: 'custom-swal-popup-error',
+        icon: 'custom-swal-icon-error',
+        title: 'custom-swal-title-error'
+      }
+    });
+    return;
   }
-  store.setCliente(formValues.nombre, formValues.tipoId, formValues.numeroId);
-  store.setPedido([...carrito.value]);
-
-
-  carrito.value = [];
-  // Redirigir al panel de cliente
-  router.push('/Cliente');
-  
-  // Limpiar carrito
-  compraExitosa.value = true;
+    try {
+    const clienteResponse = await axios.post("http://localhost:8000/pedidos/clientes", {
+      nombre: formValues.nombre,
+      tipo_id: formValues.tipoId,
+      numero_id: formValues.numeroId
+    });
+    
+    const clienteId = clienteResponse.data.id;
+    
+    // Pass the clientId to finalizarCompra
+    await finalizarCompra({...formValues, clienteId});
+  } catch (error) {
+    console.error("Error al crear/obtener cliente:", error);
+    Swal.fire({
+      icon: "error",
+      title: "Error con los datos del cliente",
+      text: error.response?.data?.detail || "Ocurrió un error inesperado."
+    });
+  }
 };
 
 
@@ -272,7 +504,7 @@ window.addEventListener("scroll", () => {
         <ul class="este">
           <li v-for="(producto, index) in carrito" :key="index" class="producto-carrito">
             <div class="carta1">
-              <img :src="producto.imagen" alt="Imagen producto" class="imagen-producto" />
+              <img v-if="producto.ruta_imagen" :src="`http://127.0.0.1:8000/productos/${producto.ruta_imagen}`" alt="Imagen producto" class="imagen-producto" />
               <p class="t">{{ producto.nombre }}</p>
               <p class="t">${{ producto.precio }}</p>
 
@@ -306,48 +538,21 @@ window.addEventListener("scroll", () => {
 
 
 
+<div>
+  <p id="amasijos" class="section-title">AMASIJOS</p>
+  <hr id="l3">
+  <hr id="l1">
 
-  <div>
-    <p id="amasijos" class="section-title">AMASIJOS</p>
-    <hr id="l3">
-    <hr id="l1">
-
-  <div id="cartas-contenedor" name="">
-    <div class="carta">
-      <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTXzf81glE2WSVF-jF6Vu7T1C3tNIhyTFzNSQ&s" alt="Amasijo 1" class="carta-imagen" />
-      <h3 class="carta-titulo">Almojabana</h3>
-      <p class="carta-descripcion">$2.500</p>
-      <button @click="agregarAlCarrito($event)">Agregar al carrito</button>
-    </div>
-    <div class="carta">
-      <img src="https://damnspicy.com/wp-content/uploads/2022/12/pan-de-yuca-recipe-pan-de-queso-5.jpg" alt="Amasijo 2" class="carta-imagen" />
-      <h3 class="carta-titulo">Pan de yuca</h3>
-      <p class="carta-descripcion">$3.000</p>
-      <button @click="agregarAlCarrito($event)">Agregar al carrito</button>
-    </div>
-    <div class="carta">
-      <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS5yGEhnEV5D5Lg0Ow8Pdg1i_L_-e_KgMR5lQ&s" alt="Amasijo 3" class="carta-imagen" />
-      <h3 class="carta-titulo">Empananda de pollo</h3>
-      <p class="carta-descripcion">3.000</p>
-      <button @click="agregarAlCarrito($event)">Agregar al carrito</button>
-    </div>
-    <div class="carta">
-      <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR3AL1iExIyFoi3WvX3n6UzihA6QNU9aY5bUg&s" alt="Amasijo 4" class="carta-imagen" />
-      <h3 class="carta-titulo">Empananda de carne</h3>
-      <p class="carta-descripcion">$3.000</p>
-      <button @click="agregarAlCarrito($event)">Agregar al carrito</button>
-    </div>
-    <div class="carta">
-      <img src="https://www.fabricadearepasparua.com/wp-content/uploads/2021/06/arepas-de-maiz-peto-pizzarepa-x5-1.jpg" alt="Amasijo 4" class="carta-imagen" />
-      <h3 class="carta-titulo">Arepa de maiz</h3>
-      <p class="carta-descripcion">$3.500</p>
-      <button @click="agregarAlCarrito($event)">Agregar al carrito</button>
-    </div>
-    <div class="carta">
-      <img src="https://i.ytimg.com/vi/AJu0gRFsBrs/maxresdefault.jpg" alt="Amasijo 6" class="carta-imagen" />
-      <h3 class="carta-titulo">Arepa de queso</h3>
-      <p class="carta-descripcion">$3.500</p>
-      <button @click="agregarAlCarrito($event)">Agregar al carrito</button>
+  <div id="cartas-contenedor">
+    <div
+      v-for="(producto, index) in productosAmasijos"
+      :key="index"
+      class="carta"
+    >
+      <img v-if="producto.ruta_imagen" :src="`http://127.0.0.1:8000/productos/${producto.ruta_imagen}`" :alt="producto.nombre" class="carta-imagen" />
+      <h3 class="carta-titulo">{{ producto.nombre }}</h3>
+      <p class="carta-descripcion">${{ producto.precio }}</p>
+      <button @click="agregarAlCarrito(producto)">Agregar al carrito</button>
     </div>
   </div>
 </div>
@@ -358,95 +563,15 @@ window.addEventListener("scroll", () => {
   <hr id="l1">
 
   <div id="cartas-contenedor">
-    <div class="carta">
-      <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSnU7fy3bN1yP2RqBVtV44fyVVxRnyxRlbWfg&s" alt="Amasijo 1" class="carta-imagen" />
-      <h3 class="carta-titulo">Milo frío</h3>
-      <p class="carta-descripcion">$6.700</p>
-      <button @click="agregarAlCarrito($event)">Agregar al carrito</button>
-    </div>
-    <div class="carta">
-      <img src="https://lavaquita.co/cdn/shop/products/supermercados_la_vaquita_supervaquita_gaseosa_coca_cola_3l_nr_bebidas_liquidas_3df7d9f6-ab5c-4638-8cf3-2bb50b76491e_1024x1024.jpg?v=1620489381" alt="Amasijo 2" class="carta-imagen" />
-      <h3 class="carta-titulo">Coca Cola 3l</h3>
-      <p class="carta-descripcion">$11.500</p>
-      <button @click="agregarAlCarrito($event)">Agregar al carrito</button>
-    </div>
-    <div class="carta">
-      <img src="https://supermercadocomunal.com/verbenal/514-large_default/gaseosa-coca-cola-400-ml.jpg" alt="Amasijo 3" class="carta-imagen" />
-      <h3 class="carta-titulo">Coca Cola 400ml</h3>
-      <p class="carta-descripcion">3.500</p>
-      <button @click="agregarAlCarrito($event)">Agregar al carrito</button>
-    </div>
-    <div class="carta">
-      <img src="https://supermercadolaestacion.com/54088-large_default/gaseosa-coca-cola-zero-botella-x-400-mililitros.jpg" alt="Amasijo 4" class="carta-imagen" />
-      <h3 class="carta-titulo">Coca Cola zero 400ml</h3>
-      <p class="carta-descripcion">$3.500</p>
-      <button @click="agregarAlCarrito($event)">Agregar al carrito</button>
-    </div>
-    <div class="carta">
-      <img src="https://1.bp.blogspot.com/-4ELwigpuR38/VO1de931nSI/AAAAAAAACJg/evRoLqpeA6k/s1600/Avena%2BSyS2.jpg" alt="Amasijo 4" class="carta-imagen" />
-      <h3 class="carta-titulo">Crema de avena</h3>
-      <p class="carta-descripcion">$4.300</p>
-      <button @click="agregarAlCarrito($event)">Agregar al carrito</button>
-    </div>
-    <div class="carta">
-      <img src="https://caldoparao.com/wp-content/uploads/2020/06/MG_1088.jpg" alt="Amasijo 6" class="carta-imagen" />
-      <h3 class="carta-titulo">Jugos en agua</h3>
-      <p class="carta-descripcion">$5.000</p>
-      <button @click="agregarAlCarrito($event)">Agregar al carrito</button>
-    </div>
-    <div class="carta">
-      <img src="https://static.wixstatic.com/media/5a057a_658b59e0b15542cc87b0e46c64c44e00~mv2.jpg/v1/fill/w_480,h_322,al_c,q_80,usm_0.66_1.00_0.01,enc_auto/5a057a_658b59e0b15542cc87b0e46c64c44e00~mv2.jpg" alt="Amasijo 6" class="carta-imagen" />
-      <h3 class="carta-titulo">Jugos en leche</h3>
-      <p class="carta-descripcion">$6.000</p>
-      <button @click="agregarAlCarrito($event)">Agregar al carrito</button>
-    </div>
-    <div class="carta">
-      <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRnJbh8cqT_6aH5kiURd9Erz4QH981QpAcFXg&s" alt="Amasijo 6" class="carta-imagen" />
-      <h3 class="carta-titulo">Masato</h3>
-      <p class="carta-descripcion">$3.600</p>
-      <button @click="agregarAlCarrito($event)">Agregar al carrito</button>
-    </div>
-    <div class="carta">
-      <img src="https://radionacional-v3.s3.amazonaws.com/s3fs-public/2022-04/Copia%20de%20foto%20001.jpeg.jpg" alt="Amasijo 6" class="carta-imagen" />
-      <h3 class="carta-titulo">Kumis</h3>
-      <p class="carta-descripcion">$5.500</p>
-      <button @click="agregarAlCarrito($event)">Agregar al carrito</button>
-    </div>
-    <div class="carta">
-      <img src="https://images.mrcook.app/recipe-image/0191d380-a120-7e52-b9da-24e66add6270" alt="Amasijo 6" class="carta-imagen" />
-      <h3 class="carta-titulo">Cappucccino frio</h3>
-      <p class="carta-descripcion">$5.900</p>
-      <button @click="agregarAlCarrito($event)">Agregar al carrito</button>
-    </div>
-    <div class="carta">
-      <img src="https://olimpica.vtexassets.com/arquivos/ids/1432111/7702090042054.jpg?v=638521778008130000" alt="Amasijo 6" class="carta-imagen" />
-      <h3 class="carta-titulo">Agua cristal</h3>
-      <p class="carta-descripcion">$3.000</p>
-      <button @click="agregarAlCarrito($event)">Agregar al carrito</button>
-    </div>
-    <div class="carta">
-      <img src="https://cdn.inoutdelivery.com/altoque.inoutdelivery.com.co/lg/1656089051330-breta%C3%B1a.webp" alt="Amasijo 6" class="carta-imagen" />
-      <h3 class="carta-titulo">Bretaña</h3>
-      <p class="carta-descripcion">$3.200</p>
-      <button @click="agregarAlCarrito($event)">Agregar al carrito</button>
-    </div>
-    <div class="carta">
-      <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSZBoyRGFBGjr17zJ3rn--IKf6zIXpYjhW93A&s" alt="Amasijo 6" class="carta-imagen" />
-      <h3 class="carta-titulo">Gatorade</h3>
-      <p class="carta-descripcion">$4.000</p>
-      <button @click="agregarAlCarrito($event)">Agregar al carrito</button>
-    </div>
-    <div class="carta">
-      <img src="https://tipicasempanadas.com/wp-content/uploads/2020/11/bebida-aguah2olimon-600ml_00.jpg" alt="Amasijo 6" class="carta-imagen" />
-      <h3 class="carta-titulo">H20</h3>
-      <p class="carta-descripcion">$3.200</p>
-      <button @click="agregarAlCarrito($event)">Agregar al carrito</button>
-    </div>
-    <div class="carta">
-      <img src="https://images.getduna.com/5fe6067e-0e11-4869-9118-ad3dcc8765c2/b2741f8c36fbead8_domicilio_4499_720x720_1660834454.png?d=600x600&format=webp" alt="Amasijo 6" class="carta-imagen" />
-      <h3 class="carta-titulo">Mr tea</h3>
-      <p class="carta-descripcion">$3.500</p>
-      <button @click="agregarAlCarrito($event)">Agregar al carrito</button>
+    <div
+      v-for="(producto, index) in productosBFRIAS"
+      :key="index"
+      class="carta"
+    >
+      <img v-if="producto.ruta_imagen" :src="`http://127.0.0.1:8000/productos/${producto.ruta_imagen}`" :alt="producto.nombre" class="carta-imagen" />
+      <h3 class="carta-titulo">{{ producto.nombre }}</h3>
+      <p class="carta-descripcion">${{ producto.precio }}</p>
+      <button @click="agregarAlCarrito(producto)">Agregar al carrito</button>
     </div>
   </div>
 </div>
@@ -457,55 +582,19 @@ window.addEventListener("scroll", () => {
   <hr id="l1">
 
   <div id="cartas-contenedor">
-    <div class="carta">
-      <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTt86DsU1Q3xw88uFHJBX_QMC8I3y-B6g4TyQ&s" alt="Amasijo 1" class="carta-imagen" />
-      <h3 class="carta-titulo">Cafe</h3>
-      <p class="carta-descripcion">$3.400</p>
-      <button @click="agregarAlCarrito($event)">Agregar al carrito</button>
-    </div>
-    <div class="carta">
-      <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/92/Cafeconleche.jpg/1200px-Cafeconleche.jpg" alt="Amasijo 2" class="carta-imagen" />
-      <h3 class="carta-titulo">Perico</h3>
-      <p class="carta-descripcion">$3.000</p>
-      <button @click="agregarAlCarrito($event)">Agregar al carrito</button>
-    </div>
-    <div class="carta">
-      <img src="https://estaticos.elcolombiano.com/documents/10157/0/792x565/6c0/780d565/none/11101/MYGE/image_content_26048298_20160519204438.jpg" alt="Amasijo 3" class="carta-imagen" />
-      <h3 class="carta-titulo">Tinto</h3>
-      <p class="carta-descripcion">2.300</p>
-      <button @click="agregarAlCarrito($event)">Agregar al carrito</button>
-    </div>
-    <div class="carta">
-      <img src="https://i.pinimg.com/564x/b5/5c/25/b55c25e7cf1a429c40928c2a69cc6f8e.jpg" alt="Amasijo 4" class="carta-imagen" />
-      <h3 class="carta-titulo">Aromatica de frutas</h3>
-      <p class="carta-descripcion">$3.500</p>
-      <button @click="agregarAlCarrito($event)">Agregar al carrito</button>
-    </div>
-    <div class="carta">
-      <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSI9s5aphh94YkcwxzXCuV__8j609N2vf5mMA&s" alt="Amasijo 4" class="carta-imagen" />
-      <h3 class="carta-titulo">Aromatica</h3>
-      <p class="carta-descripcion">$3.000</p>
-      <button @click="agregarAlCarrito($event)">Agregar al carrito</button>
-    </div>
-    <div class="carta">
-      <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS-D6Nz3HgENnb7fs4kd8CT0nUfOtUsEC9-lg&s" alt="Amasijo 6" class="carta-imagen" />
-      <h3 class="carta-titulo">Milo Caliente</h3>
-      <p class="carta-descripcion">$5.500</p>
-      <button @click="agregarAlCarrito($event)">Agregar al carrito</button>
-    </div>
-    <div class="carta">
-      <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRSUe-pjlshmf0wjoZQpR1so8hEiZQdzAJ8Dg&s" alt="Amasijo 6" class="carta-imagen" />
-      <h3 class="carta-titulo">Cappucciono Caliente</h3>
-      <p class="carta-descripcion">$7.500</p>
-      <button @click="agregarAlCarrito($event)">Agregar al carrito</button>
-    </div>
-    <div class="carta">
-      <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSrZA2eHwaHWSsLzsW0PFOBp0hh5YOQXTqGVg&s" alt="Amasijo 6" class="carta-imagen" />
-      <h3 class="carta-titulo">Chocolate</h3>
-      <p class="carta-descripcion">$3.700</p>
-      <button @click="agregarAlCarrito($event)">Agregar al carrito</button>
+    <div
+      v-for="(producto, index) in productosBCALIENTES"
+      :key="index"
+      class="carta"
+    >
+      <img v-if="producto.ruta_imagen" :src="`http://127.0.0.1:8000/productos/${producto.ruta_imagen}`" :alt="producto.nombre" class="carta-imagen" />
+      <h3 class="carta-titulo">{{ producto.nombre }}</h3>
+      <p class="carta-descripcion">${{ producto.precio }}</p>
+      <button @click="agregarAlCarrito(producto)">Agregar al carrito</button>
     </div>
   </div>
+
+  
 </div>
 
 <div>
@@ -514,64 +603,18 @@ window.addEventListener("scroll", () => {
   <hr id="l1">
 
   <div id="cartas-contenedor">
-    <div class="carta">
-      <img src="https://i.ytimg.com/vi/_E_ufouNSVA/maxresdefault.jpg" alt="Amasijo 1" class="carta-imagen" />
-      <h3 class="carta-titulo">Combo 1</h3>
-      <p class="carta-descripcion1">Calentado de frijoles</p>
-      <p class="carta-descripcion">$7.400</p>
-      <button @click="agregarAlCarrito($event)">Agregar al carrito</button>
-    </div>
-    <div class="carta">
-      <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQouTvWmgSDy9uAuELay1k9NFAkD7C92CX2Dg&s" alt="Amasijo 2" class="carta-imagen" />
-      <h3 class="carta-titulo">Combo 2</h3>
-            <p class="carta-descripcion1">Calentado de lentejas</p>
-      <p class="carta-descripcion">$7.000</p>
-      <button @click="agregarAlCarrito($event)">Agregar al carrito</button>
-    </div>
-    <div class="carta">
-      <img src="https://i.pinimg.com/originals/4f/99/f5/4f99f59b3692364ff2db6a3418f4103d.jpg" alt="Amasijo 3" class="carta-imagen" />
-      <h3 class="carta-titulo">Combo 3</h3>
-      <p class="carta-descripcion1">Huevos fritos/pericos</p>
-      <p class="carta-descripcion">8.000</p>
-      <button @click="agregarAlCarrito($event)">Agregar al carrito</button>
-    </div>
-    <div class="carta">
-      <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRT9j91LLx0TDaL5-jrj427az5fwZ9OFviC0w&s" alt="Amasijo 4" class="carta-imagen" />
-            <h3 class="carta-titulo">Combo 4</h3>
-      <p class="carta-descripcion1">Huevos con cafe</p>
-      <p class="carta-descripcion">8.000</p>
-      <button @click="agregarAlCarrito($event)">Agregar al carrito</button>
-    </div>
-    <div class="carta">
-      <img src="https://as2.ftcdn.net/v2/jpg/03/99/65/19/1000_F_399651912_DbqGWOBSWa9ngI2fIZ6JaYfMQyNqhy5l.jpg" alt="Amasijo 4" class="carta-imagen" />
-            <h3 class="carta-titulo">Combo 5</h3>
-      <p class="carta-descripcion1">Tamal y cafe
-      </p>
-      <p class="carta-descripcion">9.800</p>
-      <button @click="agregarAlCarrito($event)">Agregar al carrito</button>
-    </div>
-    <div class="carta">
-      <img src="https://vecinavegetariana.com/wp-content/uploads/2022/09/Changua-Colombiana-Colombian-Milk-and-Eggs-Breakfast-Soup-2-1.jpg" alt="Amasijo 6" class="carta-imagen" />
-      <h3 class="carta-titulo">Combo 6</h3>
-      <p class="carta-descripcion">Changua</p>
-      <p class="carta-descripcion">9.500</p>
-      <button @click="agregarAlCarrito($event)">Agregar al carrito</button>
-    </div>
-    <div class="carta">
-      <img src="https://i0.wp.com/chivoloco.com/wp-content/uploads/2020/08/caldo-con-costilla.png?fit=400%2C400&ssl=1" alt="Amasijo 6" class="carta-imagen" />
-      <h3 class="carta-titulo">Combo 7</h3>
-      <p class="carta-descripcion">Caldo de costilla y cafe</p>
-      <p class="carta-descripcion">10.000</p>
-      <button @click="agregarAlCarrito($event)">Agregar al carrito</button>
-    </div>
-    <div class="carta">
-      <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQKa1T-X3TidEboFDsGE-dNHwPuFNjWlvMQXg&s" alt="Amasijo 6" class="carta-imagen" />
-      <h3 class="carta-titulo">Combo 8</h3>
-      <p class="carta-descripcion">Parfait con frutos rojos</p>
-      <p class="carta-descripcion">8.300</p>
-      <button @click="agregarAlCarrito($event)">Agregar al carrito</button>
+    <div
+      v-for="(producto, index) in productosDESAYUNOS"
+      :key="index"
+      class="carta"
+    >
+      <img v-if="producto.ruta_imagen" :src="`http://127.0.0.1:8000/productos/${producto.ruta_imagen}`" :alt="producto.nombre" class="carta-imagen" />
+      <h3 class="carta-titulo">{{ producto.nombre }}</h3>
+      <p class="carta-descripcion">${{ producto.precio }}</p>
+      <button @click="agregarAlCarrito(producto)">Agregar al carrito</button>
     </div>
   </div>
+  
 </div>
 
 <div>
@@ -580,43 +623,18 @@ window.addEventListener("scroll", () => {
   <hr id="l1">
 
   <div id="cartas-contenedor">
-    <div class="carta">
-      <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT25a_jP1lz7z_9sL--kEV0AaWV3Z3sw9BJww&s" alt="Amasijo 1" class="carta-imagen" />
-      <h3 class="carta-titulo">Corazon</h3>
-      <p class="carta-descripcion">$2.500</p>
-      <button @click="agregarAlCarrito($event)">Agregar al carrito</button>
-    </div>
-    <div class="carta">
-      <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRcBDd3hFc_L-3EofLpyWJB9M-5rJPBYerJmQ&s" alt="Amasijo 2" class="carta-imagen" />
-      <h3 class="carta-titulo">Hojaldra</h3>
-      <p class="carta-descripcion">$2.000</p>
-      <button @click="agregarAlCarrito($event)">Agregar al carrito</button>
-    </div>
-    <div class="carta">
-      <img src="https://nuval.com.co/wp-content/uploads/2020/11/Palito-de-queso-1.png" alt="Amasijo 3" class="carta-imagen" />
-      <h3 class="carta-titulo">Palito de queso</h3>
-      <p class="carta-descripcion">2.300</p>
-      <button @click="agregarAlCarrito($event)">Agregar al carrito</button>
-    </div>
-    <div class="carta">
-      <img src="https://i.ytimg.com/vi/aTP-KghDitQ/hq720.jpg?sqp=-oaymwEhCK4FEIIDSFryq4qpAxMIARUAAAAAGAElAADIQj0AgKJD&rs=AOn4CLALEX0Sw1zVHg62PLNBuxYGmAN7zw" alt="Amasijo 4" class="carta-imagen" />
-      <h3 class="carta-titulo">Pastel de carne</h3>
-      <p class="carta-descripcion">$3.500</p>
-      <button @click="agregarAlCarrito($event)">Agregar al carrito</button>
-    </div>
-    <div class="carta">
-      <img src="https://img-global.cpcdn.com/recipes/3a81947224d88fad/400x400cq70/photo.jpg" alt="Amasijo 4" class="carta-imagen" />
-      <h3 class="carta-titulo">Pastel de pollo </h3>
-      <p class="carta-descripcion">$3.000</p>
-      <button @click="agregarAlCarrito($event)">Agregar al carrito</button>
-    </div>
-    <div class="carta">
-      <img src="https://i.ytimg.com/vi/cvwlXZuvzu4/sddefault.jpg" alt="Amasijo 6" class="carta-imagen" />
-      <h3 class="carta-titulo">Flautas</h3>
-      <p class="carta-descripcion">$2.500</p>
-      <button @click="agregarAlCarrito($event)">Agregar al carrito</button>
+    <div
+      v-for="(producto, index) in productosHOJALDRES"
+      :key="index"
+      class="carta"
+    >
+      <img v-if="producto.ruta_imagen" :src="`http://127.0.0.1:8000/productos/${producto.ruta_imagen}`" :alt="producto.nombre" class="carta-imagen" />
+      <h3 class="carta-titulo">{{ producto.nombre }}</h3>
+      <p class="carta-descripcion">${{ producto.precio }}</p>
+      <button @click="agregarAlCarrito(producto)">Agregar al carrito</button>
     </div>
   </div>
+  
 </div>
 
 <div>
@@ -625,31 +643,18 @@ window.addEventListener("scroll", () => {
   <hr id="l1">
 
   <div id="cartas-contenedor">
-    <div class="carta">
-      <img src="https://i.blogs.es/c6f09d/como-hacer-malteada-chocolate-cremosa-receta-facil-mundo/650_1200.jpg" alt="Amasijo 1" class="carta-imagen" />
-      <h3 class="carta-titulo">Malteada de chocolate</h3>
-      <p class="carta-descripcion">$9.500</p>
-      <button @click="agregarAlCarrito($event)">Agregar al carrito</button>
-    </div>
-    <div class="carta">
-      <img src="https://www.gastrolabweb.com/u/fotografias/m/2021/3/22/f850x638-10474_87963_5050.jpg" alt="Amasijo 2" class="carta-imagen" />
-      <h3 class="carta-titulo">Malteada de fresa</h3>
-      <p class="carta-descripcion">$9.000</p>
-      <button @click="agregarAlCarrito($event)">Agregar al carrito</button>
-    </div>
-    <div class="carta">
-      <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTJ2RL5me0soPjEfM0qhUOMecNtjEc3TbiqNw&s" alt="Amasijo 3" class="carta-imagen" />
-      <h3 class="carta-titulo">Malteada de cookies & cream</h3>
-      <p class="carta-descripcion">9.700</p>
-      <button @click="agregarAlCarrito($event)">Agregar al carrito</button>
-    </div>
-    <div class="carta">
-      <img src="https://apasionados-por-el-cafe.s3.amazonaws.com/wp-content/uploads/2021/11/malteada-6.jpg" alt="Amasijo 4" class="carta-imagen" />
-      <h3 class="carta-titulo">Malteada de arequipe</h3>
-      <p class="carta-descripcion">$9.500</p>
-      <button @click="agregarAlCarrito($event)">Agregar al carrito</button>
+    <div
+      v-for="(producto, index) in productosMALTEADAS"
+      :key="index"
+      class="carta"
+    >
+      <img v-if="producto.ruta_imagen" :src="`http://127.0.0.1:8000/productos/${producto.ruta_imagen}`" :alt="producto.nombre" class="carta-imagen" />
+      <h3 class="carta-titulo">{{ producto.nombre }}</h3>
+      <p class="carta-descripcion">${{ producto.precio}}</p>
+      <button @click="agregarAlCarrito(producto)">Agregar al carrito</button>
     </div>
   </div>
+  
 </div>
 
 
@@ -822,7 +827,7 @@ hr {
 /* Tarjetas de productos */
 #cartas-contenedor {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+   grid-template-columns: repeat(4, 1fr);
   gap: 20px;
   margin: 50px 4%; 
 }
@@ -925,6 +930,44 @@ button:disabled {
 
 
 /* Carrito de compras */
+.carrito-c {
+  position: fixed;
+  right: 20px;
+  top: 20px;
+  bottom: 20px;
+  background-color: rgb(0, 0, 0);
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 0 20px rgba(204, 221, 10, 0.759);
+  overflow-y: auto;
+  z-index: 1000;
+  min-width: 350px;
+  max-width: 900px;
+  transition: width 0.1s ease;
+  cursor: default;
+  border: 2px solid #d9ab23;
+  font-family: 'Jura', sans-serif;
+}
+
+.resize-handle {
+  position: absolute;
+  left: -5px;
+  top: 0;
+  bottom: 0;
+  width: 10px;
+  cursor: col-resize;
+  z-index: 10;
+}
+
+.resize-handle:hover, 
+.resizing .resize-handle {
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+.resizing {
+  user-select: none;
+  -webkit-user-select: none;
+}
 .carrito-c {
   position: fixed;
   right: 20px;

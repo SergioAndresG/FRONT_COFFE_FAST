@@ -62,12 +62,8 @@ cargarMateriasPrimas();
 <template>
   <header>
     <nav>
-      <ComImagen />
-      <ul>
-        <li><router-link to="/">HOME</router-link></li>
-        <li><a href="/Sesion">Empleados</a></li>
-        <li><a href="/Sesion">Administradores</a></li>
-      </ul>
+      <ComImagen class="logo"/>
+      
     </nav>
   </header>
   <hr />
@@ -87,20 +83,18 @@ cargarMateriasPrimas();
   <div class="card2" v-for="materia in materias_primas" :key="materia.id">
     <div class="product-image">
       <img v-if="materia.ruta_imagen" :src="`http://127.0.0.1:8000/${materia.ruta_imagen}`" class="product-image" />
-        <span v-else>{{ materia.imagen }}</span>
+      <span v-else>{{ materia.imagen }}</span>
     </div>
-      <div class="product-info">
-        <div class="info-left">
-        <p>ID:<span class="product-id">{{ materia.id }}</span></p>
-        <p>Nombre: <span class="product-name">{{ materia.nombre }}</span></p>
-      </div>
-      <div class="info-right">
-        <p>Cantidad: <span class="product-quantity">{{ materia.cantidad}} {{ materia.unidad.simbolo }} </span></p>
-        <p>Categoría: <span class="product-price">{{ materia.categoria }}</span></p>
+    <div class="product-info">
+      <p class="product-name-label">{{ materia.nombre }}</p>
+      <div class="info-details">
+        <p>ID: <span class="product-id">{{ materia.id }}</span></p>
+        <p>Cantidad: <span class="product-quantity">{{ materia.cantidad}} {{ materia.unidad.simbolo }}</span></p>
+        <p>Fecha Vencimiento: <span class="product-price">{{ materia.fecha_vencimiento }}</span></p>
       </div>
     </div>
     <div class="product-buttons">
-      <button class="delete-button" @click="(materia.id)">
+      <button class="delete-button" @click="eliminarMateria(materia.id)">
         Eliminar
       </button>
     </div>
@@ -115,145 +109,118 @@ cargarMateriasPrimas();
 <style scoped>
 @import url('https://fonts.googleapis.com/css2?family=Jura:wght@700&display=swap');
 header {
-    padding: 20px;
-    background-color: #000000;
-
-  }
-  
-  ul li {
-    text-decoration: none;
-    border-bottom: 5px solid #A65814;
-    transition: border-bottom-color 0.3s ease-in-out;
-    border-radius: 5px;
-  }
-  
-  ul li:hover {
-    border-bottom-color: rgb(17, 0, 255);
-  }
-
-  nav{
-    margin-left: 173px;
-  }
-  
-  nav ul {
-    list-style: none;
-    display: flex;
-    justify-content: space-evenly;
-    margin-left: 314px;
-    margin-top: -73px;
-  }
-  
-  nav li a {
-    font-family: 'Jura', sans-serif;
-
-    text-decoration: none;
-    color: white;
-    padding: 10px;
-  }
-  
-  #res:hover {
-    background-color: #ff9178;
-    color: aliceblue;
-  }
-  
-  #res{
-    transition: background-color 0.3s ease-in-out, color 0.3s ease-in-out;
-    background-color: #e03743;
-    text-decoration: none;
-    border-bottom: 0px;
-    width: 150px;
-    text-align: center;
-    font-size: 18px;
-    padding: 4px;
-    border-radius: 15px;
-    font-family: 'Jura', sans-serif;
-
-  }
-  
-  hr {
-    border-top: 2px solid #D9AB23; /* Ajusta el grosor y color según tus necesidades */
-    margin: 20px 0; /* Ajusta el margen superior e inferior */
-    margin-top: 54px;
-    width: 1300px;
-    margin-left: 7%;
-  }
-  
-  #l2 {
-    margin-top: 10px;
-    width: 800px;
-    margin-left: 22%;
-  }
-  #panel{
-    color: #D9AB23;
-    font-family: 'Jura', sans-serif;
-    font-weight:normal;
-    text-align: center;
-  }
-
-  #l3{
-    width: 1100px;
-    margin-left: 183px;
-    margin-top: 4px;
-  }
-  .button-container {
-            display: flex;
-            gap: 10px;
-            margin-top: 53px;
-            justify-content: center;
-        }
-
-    .custom-button {
-        background-color: #A65814;
-        color: #FFFFFF;
-        border: none;
-        padding: 10px 20px;
-        border-radius: 10px;
-        font-family: Arial, sans-serif;
-        font-size: 14px;
-        cursor: pointer;
-        transition: background-color 0.3s;
-        font-family: 'Jura', sans-serif;
-    }
-
-    .custom-button:hover {
-        background-color: #D9AB23;
-    }
-
-
-.product-container {
-  width: 1000px;
-  margin-left: 16%;
-  margin-top: 70px;
-  display: grid;
-  grid-template-columns: repeat(3, 1fr); 
-  gap: 30px; 
-  padding: 20px; 
-  justify-content: center; 
+  padding: 20px;
+  background-color: #000000;
 }
+ul li {
+  text-decoration: none;
+  border-bottom: 5px solid #A65814;
+  transition: border-bottom-color 0.3s ease-in-out;
+  border-radius: 5px;
+}
+ul li:hover {
+  border-bottom-color: rgb(17, 0, 255);
+}
+nav{
+  margin-left: 173px;
+}
+nav ul {
+  list-style: none;
+  display: flex;
+  justify-content: space-evenly;
+  margin-left: 314px;
+  margin-top: -73px;
+}
+nav li a {
+  font-family: 'Jura', sans-serif;
+  text-decoration: none;
+  color: white;
+  padding: 10px;
+}
+hr {
+  margin: 20px 0; 
+  margin-top: 54px;
+  width: 1300px;
+  margin-left: 7%;
+}
+#l2 {
+  margin-top: 10px;
+  width: 800px;
+  margin-left: 22%;
+}
+#panel{
+  color: #D9AB23;
+  font-family: 'Jura', sans-serif;
+  font-weight:normal;
+  text-align: center;
+}
+#l3{
+  width: 1100px;
+  margin-left: 183px;
+  margin-top: 4px;
+}
+.button-container {
+  display: flex;
+  gap: 10px;
+  margin-top: 53px;
+  justify-content: center;
+}
+.custom-button {
+  background-color: #A65814;
+  color: #FFFFFF;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 10px;
+  font-family: Arial, sans-serif;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  font-family: 'Jura', sans-serif;
+}
+.custom-button:hover {
+  background-color: #D9AB23;
+}
+.product-container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 70px auto 0;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 30px;
+  padding: 20px;
+  justify-content: center;
+}
+
 .card2 {
   font-family: 'Jura', sans-serif;
-  width: 320px;
-  height: 460px;
+  width: 90%;
+  height: auto;
+  min-height: 400px;
   background-color: #ad850d;
   color: white;
   border-radius: 12px;
   text-align: left;
   font-size: 14px;
-  padding: 25px;
+  padding: 20px;
   transition: transform 0.2s ease-in-out;
+  display: flex;
+  flex-direction: column;
 }
 
 .card2:hover {
-  transform: scale(1.05);
+  transform: scale(1.03);
   border-radius: 20px;
 }
 
 .product-image {
-  width: 60%;
+  width: 70%;
   height: 150px;
   border-radius: 10%;
   overflow: hidden;
-  margin-left: 10%;
+  margin: 0 auto 15px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .product-image img {
@@ -263,25 +230,42 @@ header {
 }
 
 .product-info {
-  margin-top: 15px;
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
 }
 
-.product-info {
+.product-name-label {
+  font-size: 22px;
+  font-weight: bold;
+  margin-bottom: 15px;
+  text-align: center;
+  color: #ffffff;
+}
+
+.info-details {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.info-details p {
+  margin: 0;
+  font-size: 18px;
   display: flex;
   justify-content: space-between;
-  margin-left: 25px;
+  align-items: center;
 }
-.product-info p{
-  font-size: 20px;
+
+.info-details span {
+  font-size: 16px;
+  color: #f5f5f5;
 }
-.product-info span{
-  font-size: 15px;
-}
-.info-left, .info-right {
-  width: 50%;
-}
-.info-left p, .info-right p {
-  margin: 20px;
+
+.product-buttons {
+  margin-top: 20px;
+  display: flex;
+  justify-content: center;
 }
 
 .delete-button {
@@ -292,131 +276,114 @@ header {
   border-radius: 5px;
   cursor: pointer;
   font-size: 16px;
-  margin-top: 15px;
+  transition: background-color 0.2s;
+  width: 100%;
+  max-width: 200px;
 }
 
 .delete-button:hover {
   background-color: #c89a1f;
 }
-
-.product-name {
-    color: blue;
-    color: rgb(255, 255, 255);
+footer {
+  padding: 20px;
+  text-align: center;
+  margin-top: 34px;
 }
-
-.product-id {
-  margin-top: 300px;
+footer nav ul {
+  list-style: none;
+  display: inline-block;
 }
-
-.product-description {
-    color: rgb(255, 255, 255);
+footer nav li {
+  display: inline;
+  margin: 0 10px;
 }
-
-.product-quantity {
-    color: rgb(248, 247, 244);
+footer a {
+  text-decoration: none;
+  color: #333;
 }
-
-.product-price {
-    color: rgb(255, 255, 255);
-    font-size: 1.1em;
-}
-
-
-        footer {
-      padding: 20px;
-      text-align: center;
-      margin-top: 34px;
+@media (max-width: 767px) {
+  .logo{
+    margin-left: -28%;
+    margin-top: 15%;
   }
-  
-  footer nav ul {
-      list-style: none;
-      display: inline-block;
+  hr {
+    margin-left: 9%;
+    width: 300px;
+    margin-top: -1rem;
   }
-  
-  footer nav li {
-      display: inline;
-      margin: 0 10px;
+  #l2 {
+    margin-top: 5px;
+    margin-left: 23%;
+    width: 200px;
   }
-  
-  footer a {
-      text-decoration: none;
-      color: #333;
+  #l3 {
+    margin-top: 5px;
+    margin-left: 23%;
+    width: 200px;
   }
-
-  /* From Uiverse.io by david-mohseni */ 
-  .wrapper {
-    display: inline-flex;
-    list-style: none;
-    height: 120px;
-    width: 100%;
-    padding-top: 40px;
-    font-family: "Poppins", sans-serif;
+  .button-container{
+    margin: 0;
+    padding: 2vh;
+  }
+  .product-container {
+    grid-template-columns: 1fr;
+    width: 97%;
+    margin: 30px auto 0;
+    gap: 12px;
+    padding: 10px;
+  }
+  .card2 {
+    min-height: auto;
+    padding: 12px;
+    flex-direction: row;
+    border-radius: 8px;
+    height: auto;
+  }
+  .card2:hover {
+    transform: scale(1.02);
+    border-radius: 8px;
+  }
+  .product-image {
+    width: 30%;
+    height: 90px;
+    margin: 0;
+    border-radius: 6px;
+    flex-shrink: 0;
+  }
+  .product-info {
+    width: 70%;
+    padding-left: 12px;
     justify-content: center;
-    margin-left: -32px;
   }
-  
-  .wrapper .icon {
-    position: relative;
-    background: #000000;
-    border-radius: 50%;
-    margin: 10px;
-    width: 50px;
-    height: 50px;
+  .product-name-label {
     font-size: 18px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    flex-direction: column;
-    box-shadow: 0 10px 10px rgba(0, 0, 0, 0.1);
-    cursor: pointer;
-    transition: all 0.2s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    margin-bottom: 8px;
+    text-align: left;
+  }
+  .info-details {
+    gap: 6px;
   }
   
-  .wrapper .tooltip {
-    position: absolute;
-    top: 0;
+  .info-details p {
     font-size: 14px;
-    background: #fff;
-    color: #fff;
-    padding: 5px 8px;
-    border-radius: 5px;
-    box-shadow: 0 10px 10px rgba(0, 0, 0, 0.1);
-    opacity: 0;
-    pointer-events: none;
-    transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
   }
   
-  .wrapper .tooltip::before {
+  .info-details span {
+    font-size: 13px;
+  }
+  
+  .product-buttons {
     position: absolute;
-    content: "";
-    height: 8px;
-    width: 8px;
-    background: #fff;
-    bottom: -3px;
-    left: 50%;
-    transform: translate(-50%) rotate(45deg);
-    transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    right: 10px;
+    bottom: 12px;
+    margin: 0;
   }
   
-  .wrapper .icon:hover .tooltip {
-    top: -45px;
-    opacity: 1;
-    visibility: visible;
-    pointer-events: auto;
+  .delete-button {
+    font-size: 12px;
+    padding: 6px 12px;
+    max-width: none;
   }
-  
-  .wrapper .icon:hover span,
-  .wrapper .icon:hover .tooltip {
-    text-shadow: 0px -1px 0px rgba(0, 0, 0, 0.1);
-  }
-
-  
-  .wrapper .instagram:hover,
-  .wrapper .instagram:hover .tooltip,
-  .wrapper .instagram:hover .tooltip::before {
-    background: #e4405f;
-    color: #fff;
-    margin-left: -13px;
-  }
+}
 
 </style>

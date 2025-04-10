@@ -1,24 +1,193 @@
 <script setup lang="ts">
-import lottie from 'lottie-web'
-import { onMounted, ref } from 'vue'
+import { onMounted, onUnmounted, ref, computed, reactive } from 'vue'
 import '@fortawesome/fontawesome-free/css/all.min.css'
 import jsPDF from 'jspdf'
-import { store } from './datos'
+import { useRouter } from 'vue-router'
+import axios from 'axios'
+import lottie from 'lottie-web'
 
-const animationContainer = ref(null)
+const router = useRouter()
 const isHovering = ref(false)
 
-onMounted(() => {
-  lottie.loadAnimation({
-    container: animationContainer.value,
-    renderer: 'svg',
-    loop: true,
-    autoplay: true,
-    path: 'https://lottie.host/661b9ed1-0384-4333-b8d6-86367aa242e6/yu2qrylFKV.json'
-  })
+// Definicion del tipo para estados de pedido
+type EstadoPedido = 'procesando' | 'en_proceso' | 'completado' | 'nuevo'
+
+const estadoVista = reactive({
+  textoEstado: 'Esperando confirmación del pedido',
+  iconoEstado: 'fa-clock',
+  ultimoEstado: 'procesando' as EstadoPedido,
+  mensajeEstado: '',
+  cargando: false,
+  ultimaActualizacion: Date.now()
 })
 
+// Interfaces
+interface Cliente {
+  nombre: string
+  tipoId: string
+  numeroId: string
+  desdeMenu?: boolean
+}
+
+interface ProductoPedido {
+  id: number
+  nombre: string
+  precio: number
+  cantidad: number
+}
+
+const animationContainer = ref(null)
+
+// Estado
+const clienteActual = ref<Cliente | null>(null)
+const pedidoActual = ref<ProductoPedido[]>([])
+const pedidoId = ref<string | null>(null)
+const mensajeEstado = ref('')
+const iconoEstado = ref('fa-clock')
+const cargando = ref(false)
+let intervalId: ReturnType<typeof setInterval> | null = null
+
+// Calcular el total del pedido
+const totalPedido = computed(() => {
+  return pedidoActual.value.reduce((sum, producto) => {
+    return sum + (producto.precio * producto.cantidad)
+  }, 0)
+})
+
+// Configurar animación Lottie
+lottie.loadAnimation({
+  container: animationContainer.value,
+  renderer: 'svg',
+  loop: true,
+  autoplay: true,
+  path: 'https://lottie.host/661b9ed1-0384-4333-b8d6-86367aa242e6/yu2qrylFKV.json'
+})
+
+// Cargar información del cliente y pedido
+const cargarInformacion = async () => {
+  // 1. Intentar cargar cliente desde localStorage
+  const clienteGuardado = localStorage.getItem('cliente_actual')
+  if (clienteGuardado) {
+    clienteActual.value = JSON.parse(clienteGuardado)
+  } else {
+    // Si no hay cliente guardado, redirigir al menú
+    router.push('/Menu')
+    return false
+  }
+  
+  // 2. Intentar cargar ID del pedido desde localStorage
+  const idPedidoGuardado = localStorage.getItem('pedido_id')
+  if (idPedidoGuardado) {
+    pedidoId.value = idPedidoGuardado
+    
+    // 3. Cargar detalles del pedido desde la API
+    await cargarDetallePedido(pedidoId.value)
+  } else {
+    // Si no hay pedido, intentar obtener el último pedido del cliente
+    await obtenerUltimoPedido()
+  }
+  
+  return true
+}
+
+// Obtener el último pedido para el cliente actual
+const obtenerUltimoPedido = async () => {
+  if (!clienteActual.value) return false
+  
+  try {
+    cargando.value = true
+    const response = await axios.get(`http://localhost:8000/pedidos/cliente/${clienteActual.value.numeroId}/ultimo`)
+    cargando.value = false
+    
+    if (response.status === 200 && response.data) {
+      // Guardar ID del pedido
+      pedidoId.value = response.data.id
+      localStorage.setItem('pedido_id', response.data.id.toString())
+      
+      // Cargar productos
+      pedidoActual.value = response.data.productos.map((item: any) => ({
+        id: item.producto_id,
+        nombre: item.producto_nombre || `Producto ${item.producto_id}`,
+        precio: item.precio_unitario || 0,
+        cantidad: item.cantidad
+      }))
+      
+      // Actualizar estado
+      estadoVista.ultimoEstado = response.data.estado || 'nuevo'
+      actualizarEstadoVista(estadoVista.ultimoEstado)
+
+      return true
+    }
+  } catch (error) {
+    console.error('Error al obtener último pedido:', error)
+    cargando.value = false
+  }
+  
+  return false
+}
+
+// Cargar detalle de un pedido específico
+const cargarDetallePedido = async (id: string) => {
+  try {
+    cargando.value = true
+    console.log('Cargando pedido con id:', id)
+    const response = await axios.get(`http://localhost:8000/pedidos/${id}`)
+    console.log("Respuesta del backend:", response.data)
+    cargando.value = false
+    
+    if (response.status === 200) {
+      // Cargar productos
+      pedidoActual.value = response.data.productos.map((item: any) => ({
+        id: item.producto_id,
+        nombre: item.producto_nombre || `Producto ${item.producto_id}`,
+        precio: item.precio_unitario || 0,
+        cantidad: item.cantidad
+      }))
+      
+      // Actualizar estado
+      estadoVista.ultimoEstado = response.data.estado || 'nuevo'
+      actualizarEstadoVista(estadoVista.ultimoEstado)
+
+
+      return true
+    }
+  } catch (error) {
+    console.error('Error al cargar pedido:', error)
+    cargando.value = false
+  }
+  
+  return false
+}
+
+const actualizarEstadoVista = (estado: EstadoPedido) => {
+  switch (estado) {
+    case 'nuevo':
+      estadoVista.textoEstado = 'Tu pedido ha sido recibido';
+      estadoVista.iconoEstado = 'fa-clock';
+      break;
+    case 'en_proceso':
+      estadoVista.textoEstado = 'Estamos preparando tu pedido';
+      estadoVista.iconoEstado = 'fa-cogs';
+      break;
+    case 'completado':
+      estadoVista.textoEstado = '¡Tu pedido está listo!';
+      estadoVista.iconoEstado = 'fa-check-circle';
+      break;
+    default:
+      estadoVista.textoEstado = 'Esperando confirmación del pedido';
+      estadoVista.iconoEstado = 'fa-clock';
+  }
+
+  estadoVista.ultimaActualizacion = Date.now();
+};
+
+
+// Generar PDF de la factura
 const generarPDF = () => {
+  if (!clienteActual.value || pedidoActual.value.length === 0) {
+    return
+  }
+  
   const doc = new jsPDF()
   
   // Configuración inicial
@@ -30,8 +199,8 @@ const generarPDF = () => {
   doc.setFontSize(12)
   doc.setFont("helvetica", "normal")
   doc.text(`Fecha: ${new Date().toLocaleDateString()}`, 20, 35)
-  doc.text(`Cliente: ${store.cliente.nombre}`, 20, 45)
-  doc.text(`Identificación: ${store.cliente.tipoId} ${store.cliente.numeroId}`, 20, 55)
+  doc.text(`Cliente: ${clienteActual.value.nombre}`, 20, 45)
+  doc.text(`Identificación: ${clienteActual.value.tipoId} ${clienteActual.value.numeroId}`, 20, 55)
   
   // Línea divisoria
   doc.setLineWidth(0.5)
@@ -43,7 +212,7 @@ const generarPDF = () => {
   doc.text("Detalle del pedido:", 20, y)
   y += 10
 
-  store.pedido.forEach((producto, index) => {
+  pedidoActual.value.forEach((producto, index) => {
     doc.setFont("helvetica", "bold")
     doc.text(`${index + 1}. ${producto.nombre}`, 20, y)
     doc.setFont("helvetica", "normal")
@@ -58,16 +227,66 @@ const generarPDF = () => {
   doc.line(20, y, 190, y)
   y += 10
 
-  const total = store.pedido.reduce((acc, p) => acc + p.precio * p.cantidad, 0)
   doc.setFontSize(14)
   doc.setFont("helvetica", "bold")
-  doc.text(`Total a pagar: $${total.toLocaleString()}`, 20, y)
+  doc.text(`Total a pagar: $${totalPedido.value.toLocaleString()}`, 20, y)
 
-  // Guardar el PDF
-  doc.save(`Factura_${store.cliente.nombre.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0,10)}.pdf`)
+  doc.save(`Factura_${clienteActual.value.nombre.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0,10)}.pdf`)
 }
-</script>
 
+// Configurar polling para actualizar estado periódicamente
+const iniciarPolling = () => {
+  // Limpiar intervalo anterior si existe
+  if (intervalId) {
+    clearInterval(intervalId)
+  }
+  
+  // Consultar estado cada 10 segundos
+  intervalId = setInterval(async () => {
+    if (pedidoId.value) {
+      await cargarDetallePedido(pedidoId.value)
+    }
+  }, 10000) // 10 segundos
+}
+
+// Actualizar manualmente
+const actualizarManual = async () => {
+  if (pedidoId.value) {
+    await cargarDetallePedido(pedidoId.value)
+  }
+}
+
+// Volver al menú
+const volverAlMenu = () => {
+  router.push('/Menu')
+}
+
+// Lifecycle hooks
+onMounted(async () => {
+  // Cargar información y configurar polling
+  const cargadoExitoso = await cargarInformacion()
+  
+  if (cargadoExitoso) {
+    iniciarPolling()
+  }
+
+  lottie.loadAnimation({
+    container: animationContainer.value,
+    renderer: 'svg',
+    loop: true,
+    autoplay: true,
+    path: 'https://lottie.host/661b9ed1-0384-4333-b8d6-86367aa242e6/yu2qrylFKV.json'
+  })
+})
+
+onUnmounted(() => {
+  // Limpiar intervalo al desmontar componente
+  if (intervalId) {
+    clearInterval(intervalId)
+    intervalId = null
+  }
+})
+</script>
 
 <template>
     <header>
@@ -78,39 +297,41 @@ const generarPDF = () => {
     </header>
 
     <div class="progress-bar">
-        <div class="progress-step">
+      <div class="progress-step" :class="{'active-step': estadoVista.ultimoEstado}">
             <div class="progress-circle">
-                <i class="fas fa-list"></i>
+              <i :class="estadoVista.ultimoEstado === 'nuevo' ? 'fas fa-check' : 'fas fa-list'"></i>
             </div>
             <span class="progress-text">Elegir compra</span>
         </div>
-        <div class="progress-step">
+        <div class="progress-step" :class="{'active-step': estadoVista.ultimoEstado}">
             <div class="progress-circle">
-                <i class="fas fa-edit"></i>
+              <i :class="estadoVista.ultimoEstado === 'nuevo' ? 'fas fa-check' : 'fas fa-edit'"></i>
             </div>
             <span class="progress-text">Insertar datos</span>
         </div>
-        <div class="progress-step">
+        <div class="progress-step" :class="{'active-step': estadoVista.ultimoEstado}">
             <div class="progress-circle">
                 <i class="fas fa-shopping-cart"></i>
             </div>
             <span class="progress-text">Pedir pedido</span>
         </div>
-        <div class="progress-step active-step">
+        <div class="progress-step" 
+             :class="{
+               'active-step': estadoVista.ultimoEstado,
+               'current-step': estadoVista.ultimoEstado === 'procesando'
+             }">
             <div class="progress-circle">
-                <i class="fas fa-clock"></i>
+                <i :class="estadoVista.ultimoEstado === 'completado' ? 'fas fa-check' : 'fas fa-clock'"></i>
             </div>
             <span class="progress-text">Esperar pedido</span>
         </div>
-        <div class="progress-step">
+        <div class="progress-step" :class="{'active-step': estadoVista.ultimoEstado === 'completado'}">
             <div class="progress-circle">
                 <i class="fas fa-check"></i>
             </div>
             <span class="progress-text">Listo</span>
         </div>
     </div>
-    
-
     <div class="contenedor-L">
         <div class="bienvenida-L">
             <h2 class="texto-bienvenido">Bienvenido Cliente</h2>
@@ -120,19 +341,28 @@ const generarPDF = () => {
         <div class="datos-L">
             <h3 class="titulo-datos">Tus Datos:</h3>
             
-            <div class="fila-dato">
-                <span class="etiqueta">Nombre:</span>
-                <span class="valor">{{ store.cliente.nombre }}</span>
+            <div v-if="clienteActual">
+                <div class="fila-dato">
+                    <span class="etiqueta">Nombre:</span>
+                    <span class="valor">{{ clienteActual.nombre }}</span>
+                </div>
+                
+                <div class="fila-dato">
+                    <span class="etiqueta">Tipo de documento:</span>
+                    <span class="valor">{{ clienteActual.tipoId }}</span>
+                </div>
+                
+                <div class="fila-dato">
+                    <span class="etiqueta">Identificación:</span>
+                    <span class="valor">{{ clienteActual.numeroId }}</span>
+                </div>
             </div>
+
             
-            <div class="fila-dato">
-                <span class="etiqueta">Tipo de documento:</span>
-                <span class="valor">{{ store.cliente.tipoId }}</span>
-            </div>
             
-            <div class="fila-dato">
-                <span class="etiqueta">Identificación:</span>
-                <span class="valor">{{ store.cliente.numeroId }}</span>
+            <div v-else class="sin-datos">
+                <p>No hay datos de cliente disponibles</p>
+                <button @click="router.push('/menu')" class="btn-volver">Volver al menú</button>
             </div>
         </div>
         
@@ -148,47 +378,50 @@ const generarPDF = () => {
             <div class="carta-pedido" 
                 :class="{
                 'zoom-effect': isHovering,
-                'color-effect': isHovering
+                'color-effect': isHovering,
+                'empty-pedido': !pedidoActual || pedidoActual.length === 0
                 }">
                 <div class="detalles-pedido">
                     <h2 class="titulo-pediste">Pediste:</h2>
-                    <ul class="lista-productos">
-                        <li v-for="(producto, index) in store.pedido" :key="index">
+                    <div v-if="!pedidoActual || pedidoActual.length === 0" class="empty-message">
+                        <i class="fas fa-shopping-cart"></i>
+                        <p>No hay productos en tu pedido</p>
+                    </div>
+                    <ul v-else class="lista-productos">
+                        <li v-for="(producto, index) in pedidoActual" :key="index">
                             • {{ producto.nombre }} ({{ producto.cantidad }})
                         </li>
                     </ul>
-                    <div class="subtotal">
+                    <div v-if="pedidoActual && pedidoActual.length > 0" class="subtotal">
                         <span>Subtotal:</span>
                         <span class="precio">
                             ${{
-                                store.pedido.reduce((acc, p) => acc + (p.precio * p.cantidad), 0).toLocaleString()
+                                pedidoActual.reduce((acc, p) => acc + (p.precio * p.cantidad), 0).toLocaleString()
                             }}
                         </span>
                     </div>
                 </div>
             </div>
-            
-            <button class="btn-mas-info" 
-                    :class="{'show-btn': isHovering}"
-                    @click="generarPDF">
-                Descargar Factura
-            </button>
+        
+            <div class="acciones-pedido">
+                <button class="btn-mas-info" 
+                        :class="{'show-btn': isHovering}"
+                        @click="generarPDF"
+                        :disabled="!pedidoActual || pedidoActual.length === 0">
+                    Descargar Factura
+                </button>
+            </div>
         </div>
         
         <div class="estado-pedido">
             <div class="estado-card como-va">
                 <h3>¿Cómo va tu pedido?</h3>
                 <div class="estado-content">
-                    <i class="fas fa-clock icono-estado"></i>
-                    <p>Tu pedido está siendo procesado</p>
-                </div>
-            </div>
-            
-            <div class="estado-card en-preparacion">
-                <h3>En preparación:</h3>
-                <div class="estado-content">
-                    <i class="fas fa-utensils icono-estado"></i>
-                    <p>Nuestros cocineros están trabajando en tu orden</p>
+                    <i class="fas" :class="estadoVista.iconoEstado"></i>
+                    <p>{{ estadoVista.textoEstado }}</p>
+                    <span class="tiempo-actualizacion">
+                        Última actualización: {{ new Date(estadoVista.ultimaActualizacion).toLocaleTimeString() }}
+                    </span>
                 </div>
             </div>
         </div>
@@ -508,6 +741,42 @@ hr {
     transform: translateX(-50%) scale(1.05);
 }
 
+.btn-confirmar {
+  background-color: #4CAF50;
+  color: white;
+  padding: 12px 24px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  margin-right: 15px;
+  transition: all 0.3s ease;
+}
+
+.btn-confirmar:hover:not(:disabled) {
+  background-color: #45a049;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.btn-confirmar:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.acciones-pedido {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+  margin-bottom: 30px;
+  gap: 15px;
+}
+
+.fa-spinner {
+  margin-right: 8px;
+}
+
 /*cuadros de estado del pedido */
 .estado-pedido {
     display: flex;
@@ -563,5 +832,46 @@ hr {
     box-shadow: 0 5px 15px rgba(217, 171, 35, 0.675);
 }
 
+.btn-actualizar {
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+    transition: background-color 0.3s;
+}
+
+.btn-actualizar:hover {
+    background-color: #45a049;
+}
+
+.tiempo-actualizacion {
+    font-size: 0.8rem;
+    color: #666;
+    margin-top: 5px;
+    display: block;
+}
+
+.empty-pedido {
+    min-height: 150px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.empty-message {
+    text-align: center;
+    color: #999;
+}
+
+.empty-message i {
+    font-size: 2rem;
+    margin-bottom: 10px;
+}
 
 </style>

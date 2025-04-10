@@ -24,6 +24,7 @@ import ComConProC from "@/components/ComConProC.vue";
 import ActulizacionPerfil from "@/components/ActulizacionPerfil.vue";
 import ComPCliente from "@/components/ComPCliente.vue";
 import ComPedidos from "@/components/ComPedidos.vue";
+import ComPfacturas from "@/components/ComPfacturas.vue";
 
 const routes = [
     {
@@ -144,7 +145,7 @@ const routes = [
         component: ActulizacionPerfil
     },
     {
-        path:"/Cliente",
+        path:"/Clientes",
         name:"PedidoCliente",
         component: ComPCliente
     },
@@ -152,6 +153,11 @@ const routes = [
         path:"/Pedidos",
         name:"Pedidos",
         component: ComPedidos
+    },
+    {
+        path: "/Facturas",
+        name:"Facturas",
+        component:ComPfacturas
     }
 ]
 

@@ -7,6 +7,7 @@ const categorias = ref([]);
 const ingredientes = ref([]);
 const unidades = ref([]);
 const productos = ref([]);
+const usuario = ref([]);
 
 const showIngredientesModal = ref(false);
 const showCantidadModal = ref(false);
@@ -92,6 +93,17 @@ const cargarUnidadMedida = async () => {
 }
 
 cargarUnidadMedida();
+
+const cargarEmpleados = async () => {
+  try {
+    const respuesta = await axios.get("http://127.0.0.1:8000/usuarios");
+    usuario.value = respuesta.data;  
+  } catch (error) {
+    console.error("Error al cargar los usuarios");
+  }
+}
+
+cargarEmpleados()
 
 const handleImageUpload = (event: Event) => {
   const file = (event.target as HTMLInputElement).files?.[0];
@@ -181,7 +193,6 @@ const agregarIngrediente = () => {
       showConfirmButton: false
     });
   }
-
   // Cerrar modal
   closeCantidadModal();
 };
@@ -339,8 +350,23 @@ const closeModal = () => {
           </div>
 
           <div class="column">
-            <label for="idEmpleado">ID Empleado:</label>
-            <input type="number" id="idEmpleado" v-model="formData.id_empleado" placeholder="Ingrese el ID del empleado que registra" required />
+            <label for="nombre">Nombre de quine agrega:</label>
+
+            <select
+                id="idEmpleado"
+                  v-model="formData.id_empleado"
+                  required
+                >
+                  <option value="">Seleccione una categoría</option>
+                  <option
+                    v-for="usuarioItem in usuario"
+                    :key="usuarioItem.id"
+                    :value="usuarioItem.id"
+                  >
+                    {{ usuarioItem.nombre }}
+                  </option>
+                </select>
+
 
             <label for="categoria">Categoría:</label>
             <select id="categoria" v-model="formData.categoria" required>
@@ -349,7 +375,6 @@ const closeModal = () => {
                     {{ categoria }}
                 </option>
             </select>
-4
             <label for="tipo">Tipo:</label>
             <select id="tipo" v-model="formData.tipo" required>
               <option value="HECHO">Hecho</option>
@@ -419,7 +444,6 @@ const closeModal = () => {
                       </td>
                       <td>{{ ing.cantidad }}</td>
                       <td>{{ ing.unidad }}</td>
-                      <td>{{ }}</td>
 
                       <td>
                         <button @click="openCantidadModal(ing)" class="btn-edit">Editar</button>

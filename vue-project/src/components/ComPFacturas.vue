@@ -37,6 +37,24 @@ export default {
       });
     },
 
+    async exportarExcel() {
+      try {
+        const response = await axios.get('http://localhost:8000/exportar_excel/', {
+          responseType: 'blob'
+        });
+
+        const url = window.URL.createObjectURL(new Blob([response.data]));
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', 'reporte_inventario.xlsx');
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+      } catch (error) {
+        console.error('Error al exportar el Excel:', error);
+      }
+    },
+
     async fetchFacturasClientes() {
       try {
         const response = await axios.get("http://localhost:8000/api/facturas/");
@@ -124,9 +142,7 @@ export default {
     if (this.animation) {
       this.animation.destroy();
     }
-  },
-
-    
+  }
 };
 </script>
 
@@ -183,7 +199,9 @@ export default {
           </div>
           
           <div class="action-buttons">
-            <button class="btn btn-gold"><i class="fas fa-file-import"></i> Exportar Excel</button>
+            <button class="btn btn-gold" @click="exportarExcel">
+              <i class="fas fa-file-import"></i> Exportar Excel
+            </button>
           </div>
         </div>
       </div>
@@ -378,7 +396,7 @@ hr {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-top: -310px;
+  margin-top: -1000px;
   margin-left: 700px;
   height: 30px;
 

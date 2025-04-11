@@ -11,6 +11,7 @@ interface FormData {
   contraseña: string;
   confirmarContraseña: string;
   documento: number | null; // Documento puede ser null inicialmente
+  telefono: number;
   file: File | null; // Archivo opcional
 }
 
@@ -18,6 +19,7 @@ interface FormData {
 const formData = ref<FormData>({
   nombre: "",
   rol: "",
+  telefono: null,
   subrol: null,
   correo: "",
   contraseña: "",
@@ -58,6 +60,7 @@ const handleSubmit = async (): Promise<void> => {
         // Agregar datos del usuario como JSON a FormData
         data.append("nombre", formData.value.nombre);
         data.append("documento", formData.value.documento!.toString());
+        data.append("telefono", formData.value.telefono!.toString());
         data.append("rol", formData.value.rol);
         data.append("subrol", formData.value.subrol || "");
         data.append("correo", formData.value.correo);
@@ -74,14 +77,10 @@ const handleSubmit = async (): Promise<void> => {
                 "Content-Type": "multipart/form-data"
             }
         });
-
         console.log("Usuario agregado con éxito:", response.data);
-        // Aquí asumo que tu backend devuelve la URL completa de la imagen en response.data.rutaImagen
         closeModal();
     } catch (error) {
         console.error("Error al agregar el usuario:", error);
-        
-        // Proporcionar un mensaje más claro sobre el error
         if (axios.isAxiosError(error)) {
             alert("Error en la solicitud al servidor. " + (error.response?.data.message || "Inténtalo nuevamente."));
         } else {
@@ -96,6 +95,7 @@ const resetForm = (): void => {
     nombre: "",
     rol: "",
     subrol: null,
+    telefono: null,
     correo: "",
     contraseña: "",
     confirmarContraseña: "",
@@ -112,8 +112,10 @@ const closeModal = (): void => {
 
 <template>
 <div class="modal-overlay" @click="closeModal">
+
   <div class="modal-content" @click.stop>
-    <h1>Agregar Usuario</h1>
+    <button @click="closeModal" class="close-btn">X</button>
+    <h1>Agregar Trabajador</h1>
     <div class="form-container">
       <form @submit.prevent="handleSubmit">
         <!-- Campo para Nombre -->
@@ -123,6 +125,10 @@ const closeModal = (): void => {
         <!-- Campo para Documento -->
         <label for="documento">Documento:</label>
         <input type="number" id="documento" v-model.number="formData.documento" placeholder="Ingrese su documento" required />
+
+        <!-- Campo para Telefono -->
+        <label for="telefono">Telefono:</label>
+        <input type="number" id="telefono" v-model.number="formData.telefono" placeholder="Ingrese su telefono" required />
 
         <!-- Campo para Correo -->
         <label for="correo">Correo:</label>
@@ -141,7 +147,6 @@ const closeModal = (): void => {
         <select id="rol" v-model="formData.rol" required>
           <option disabled value="">Selecciona Rol</option>
           <option value="EMPLEADO">Empleado</option>
-          <!-- Agrega más roles según sea necesario -->
         </select>
 
         <!-- Campo para SubRol -->
@@ -161,47 +166,40 @@ const closeModal = (): void => {
       </form>
     </div>
   </div>
-  <button @click="closeModal" class="close-btn">X</button>
 </div>
   </template>
 
 <style scoped>
+h1{
+  font-family: 'Jura', sans-serif;
+  font-size: 24px;
+  text-align: center;
+  color: #ffd700;
+  margin-top: -13px;
 
-
-  h1{
-    font-family: 'Jura', sans-serif;
-    font-size: 24px;
-    text-align: center;
-    color: #ffd700;
-    margin-top: -13px;
-
-  }
-  /* Estilo del formulario */
+}
+/* Estilo del formulario */
 .form-container {
-  background-color: #00000077; /* Fondo negro */
-  padding: 15px;
+  padding: 45px;
   margin: 0 auto;
   border-radius: 8px;
   margin-top: -2px;
   width: 600px;
 }
-
 .form-container select{
-    font-family: 'Jura', sans-serif;
-    margin-bottom: 15px;
-    padding: 10px;
-    border: none;
-    border-radius: 4px;
-    background-color: #cf9b00; /* Color amarillo similar */
-    color: #000;
-    font-size: 14px;
+  font-family: 'Jura', sans-serif;
+  margin-bottom: 15px;
+  padding: 10px;
+  border: none;
+  border-radius: 4px;
+  background-color: #cf9b00; 
+  color: #000;
+  font-size: 14px;
 }
-
 form {
   display: flex;
   flex-direction: column;
 }
-
 label {
   color: #fff; /* Texto blanco */
   font-size: 10px;
@@ -209,15 +207,13 @@ label {
   font-family: 'Jura', sans-serif;
     text-align: center;
 }
-
 input {
-    font-family: 'Jura', sans-serif;
-
+  font-family: 'Jura', sans-serif;
   margin-bottom: 15px;
   padding: 10px;
   border: none;
   border-radius: 4px;
-  background-color: #cf9b00; /* Color amarillo similar */
+  background-color: #cf9b00; 
   color: #000;
   font-size: 14px;
 }
@@ -228,7 +224,7 @@ input::placeholder {
 }
 
 button {
-  background-color: #ffecb3; /* Botón amarillo claro */
+  background-color: #ffecb3; 
   color: #000;
   padding: 10px 15px;
   font-size: 14px;
@@ -239,11 +235,7 @@ button {
   font-family: 'Jura', sans-serif;
   width: 150px;
   margin-left: 220px;
-
 }
-
-
-
 .select{
     font-family: 'Jura', sans-serif;
     margin-bottom: 15px;
@@ -254,12 +246,9 @@ button {
     color: #000;
     font-size: 14px;
 }
-
 button:hover {
   background-color: #ffd700;
 }
-
-
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -270,37 +259,32 @@ button:hover {
   display: flex;
   justify-content: center;
   align-items: center;
+  overflow-y: auto;
   z-index: 9999;
 }
-
 .modal-content {
   background-color: black;
-  margin-top: 10px;
+  margin-top: 210px;
   padding: 20px;
   width: 80%;
-  height: 630px;
+  height: 800px;
   max-width: 700px;
   border-radius: 8px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
   border: 2px solid;
 }
-
 .close-btn {
-  background-color: transparent;
+  background-color: red;
   color: white;
   border: none;
   padding: 10px 20px;
   margin-top: 10px;
   cursor: pointer;
   border-radius: 4px;
-  margin-top: -590px;
-  margin-right: -320px;
-  width: 90px;
+  width: 50px;
+  margin-left: 640px;
 }
-
 .close-btn:hover {
   background-color: darkred;
 }
-
-
 </style>

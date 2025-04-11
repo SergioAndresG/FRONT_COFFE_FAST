@@ -3,8 +3,12 @@ import { ref, computed, watch } from "vue";
 import axios from "axios";
 import Swal from "sweetalert2";
 
+const categorias = ref([]);
 const ingredientes = ref([]);
 const unidades = ref([]);
+const productos = ref([]);
+const usuario = ref([]);
+
 const showIngredientesModal = ref(false);
 const showCantidadModal = ref(false);
 const selectedUnidad_id = ref(null);
@@ -19,7 +23,7 @@ const formData = ref({
   precio: null,
   cantidad: null,
   id_empleado: 0,
-  categoria: "PLATO",
+  categoria: "",
   imagen: null as File | null,
   stockMinimo: null,    
   tipo: "COMPRADO",
@@ -43,6 +47,31 @@ watch(() => formData.value.tipo, (newValue) => {
   }
 });
 
+
+const cargarProductos = async () => {
+  try {
+    const respuesta = await axios.get("http://127.0.0.1:8000/productos")
+    productos.value = respuesta.data
+  } catch (error) {
+    console.error("Error al cargar los produtos", error)
+  }
+}
+
+cargarProductos();
+
+const cargarCategorias = async () => {
+  try {
+    const respuesta = await axios.get("http://127.0.0.1:8000/productos/categorias")
+    categorias.value = respuesta.data
+  } catch (error) {
+    console.error("Error al cargar los produtos", error)
+  }
+}
+
+cargarCategorias();
+
+cargarProductos();
+
 const cargarMateria = async () => {
   try {
     const respuesta = await axios.get("http://127.0.0.1:8000/materia");
@@ -64,6 +93,17 @@ const cargarUnidadMedida = async () => {
 }
 
 cargarUnidadMedida();
+
+const cargarEmpleados = async () => {
+  try {
+    const respuesta = await axios.get("http://127.0.0.1:8000/usuarios");
+    usuario.value = respuesta.data;  
+  } catch (error) {
+    console.error("Error al cargar los usuarios");
+  }
+}
+
+cargarEmpleados()
 
 const handleImageUpload = (event: Event) => {
   const file = (event.target as HTMLInputElement).files?.[0];
@@ -153,7 +193,6 @@ const agregarIngrediente = () => {
       showConfirmButton: false
     });
   }
-
   // Cerrar modal
   closeCantidadModal();
 };
@@ -206,7 +245,7 @@ const handleSubmit = async () => {
       });
       return;
     }
-
+    
     // Crear un objeto FormData para enviar tanto los datos como la imagen
     const form = new FormData();
     form.append("nombre", formData.value.nombre);
@@ -249,6 +288,7 @@ const handleSubmit = async () => {
       },
     });
 
+
     Swal.fire({
       icon: "success",
       title: "Producto agregado con éxito",
@@ -283,7 +323,7 @@ const handleSubmit = async () => {
 // Emitir evento para cerrar el modal
 const emit = defineEmits(["close"]);
 const closeModal = () => {
-  emit("close");
+  emit("close")
 };
 </script>
 
@@ -293,7 +333,7 @@ const closeModal = () => {
 <transition name="fade2">
   <div class="modal-overlay" @click="closeModal">
     <div class="modal-content" @click.stop>
-      <button @click="closeModal" class="close-btn">X</button> <!-- Botón fuera del formulario -->
+      <button @click="closeModal" class="close-btn">X</button>
       <h1>Agregar Producto</h1>
       <div class="form-container">
         <form @submit.prevent="handleSubmit">
@@ -310,16 +350,31 @@ const closeModal = () => {
           </div>
 
           <div class="column">
-            <label for="idEmpleado">ID Empleado:</label>
-            <input type="number" id="idEmpleado" v-model="formData.id_empleado" placeholder="Ingrese el ID del empleado que registra" required />
+            <label for="nombre">Nombre de quine agrega:</label>
+
+            <select
+                id="idEmpleado"
+                  v-model="formData.id_empleado"
+                  required
+                >
+                  <option value="">Seleccione una categoría</option>
+                  <option
+                    v-for="usuarioItem in usuario"
+                    :key="usuarioItem.id"
+                    :value="usuarioItem.id"
+                  >
+                    {{ usuarioItem.nombre }}
+                  </option>
+                </select>
+
 
             <label for="categoria">Categoría:</label>
             <select id="categoria" v-model="formData.categoria" required>
-              
-              <option value="PLATO">Comida</option>
-              <option value="BEBIDA">Bebida</option>
+              <option value="" >Seleccione una categoria</option>
+                  <option v-for="categoria in categorias" :key="categoria" :value="categoria" placeholder="">
+                    {{ categoria }}
+                </option>
             </select>
-
             <label for="tipo">Tipo:</label>
             <select id="tipo" v-model="formData.tipo" required>
               <option value="HECHO">Hecho</option>
@@ -336,11 +391,11 @@ const closeModal = () => {
                 </div>
             </transition>
             
-
             <label for="stockMinimo">Stock Mínimo:</label>
             <input type="number" id="stockMinimo" v-model="formData.stockMinimo" placeholder="Ingrese el stock mínimo" required />
 
             <label for="imagen">Agregar imagen:</label>
+            
             <input type="file" id="imagen" @change="handleImageUpload">
           </div>
 
@@ -389,7 +444,6 @@ const closeModal = () => {
                       </td>
                       <td>{{ ing.cantidad }}</td>
                       <td>{{ ing.unidad }}</td>
-                      <td>{{ }}</td>
 
                       <td>
                         <button @click="openCantidadModal(ing)" class="btn-edit">Editar</button>
@@ -762,6 +816,7 @@ select {
   transform: translateY(-3px);
   background-color: #cf0000;
 }
+
 /*Estilos del contenedor de ingredientes */
 .ingredientes-grid{
   display: grid;
@@ -980,6 +1035,5 @@ select {
 }
 .unidad{
   margin-left: 65px;
- 
 }
 </style>

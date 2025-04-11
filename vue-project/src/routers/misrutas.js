@@ -9,7 +9,6 @@ import ComForAgregar from "@/components/ComForAgregar.vue";
 import ComForDel from "@/components/ComForDel.vue";
 import ComGest from "@/components/ComGest.vue";
 import ComGestEmpleadoPr from "@/components/ComGestEmpleadoPr.vue";
-import ComHome from "@/components/ComHome.vue";
 import ComJefe from "@/components/ComJefe.vue";
 import ComMateriaPrima from "@/components/ComMateriaPrima.vue";
 import ComMateriaPrimaAd from "@/components/ComMateriaPrimaAd.vue";
@@ -22,25 +21,19 @@ import ComSesion from "@/components/ComSesion.vue";
 import SnowFall from "@/components/SnowFall.vue";
 import { createRouter, createWebHistory } from "vue-router";
 import ComConProC from "@/components/ComConProC.vue";
-import ComPedido from "@/components/ComPedido.vue";
-import ComPCliente2 from "@/components/ComPCliente2.vue";
+import ActulizacionPerfil from "@/components/ActulizacionPerfil.vue";
+import ComPCliente from "@/components/ComPCliente.vue";
+import ComPedidos from "@/components/ComPedidos.vue";
 import ComPFacturas from "@/components/ComPFacturas.vue";
 
-
-
 const routes = [
-    {
-        path: "/",
-        name: "Home",
-        component: ComHome
-    },
     {
         path: "/Nosotros",
         name: "Nosotros",
         component: ComNostros
     },
     {
-        path: "/Sesion",
+        path: "/",
         name:"Sesion",
         component: ComSesion
     },
@@ -147,25 +140,30 @@ const routes = [
         component: ComConProC
     },
     {
-        path: "/Clientes",
-        name: "Clientes",
-        component: ComPCliente2
+        path: "/ActualizarPerfil",
+        name: "ActualizarPerfil",
+        component: ActulizacionPerfil
     },
     {
-        path: "/Pedidos",
-        name: "Pedidos",
-        component: ComPedido
+        path:"/Clientes",
+        name:"PedidoCliente",
+        component: ComPCliente
+    },
+    {
+        path:"/Pedidos",
+        name:"Pedidos",
+        component: ComPedidos
     },
     {
         path: "/Facturas",
-        name: "Facturas",
-        component: ComPFacturas
-    },
+        name:"Facturas",
+        component:ComPFacturas
+    }
 ]
 
 const router = createRouter({
     history: createWebHistory(),
     routes
-})
+});
 
 export default router;

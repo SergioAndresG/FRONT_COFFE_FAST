@@ -3,19 +3,20 @@ import { ref } from 'vue';
 import axios from 'axios';
 import ComImagen from './icons/IMGENES/ComImagen.vue';
 
-// Productos predefinidos para mostrar
-const productos = ref([]);
+//objeto reactivo para almacenar los datos
+const materias_primas = ref([]);
 
-const cargarProductos = async () => {
+//Funcion para cargar las materias primas
+const cargarMateriasPrimas = async () => {
   try {
-    const respuesta = await axios.get("http://localhost:8080/materia"); // Ajusta la URL según tu backend
-    productos.value = respuesta.data; // Asigna los datos de la respuesta
+    const respuesta = await axios.get("http://127.0.0.1:8000/materia");
+    materias_primas.value = respuesta.data; 
   } catch (error) {
     console.error("Error al cargar productos:", error);
   }
 };
 
-cargarProductos();
+cargarMateriasPrimas();
 </script>
 
 <template>
@@ -35,15 +36,15 @@ cargarProductos();
     <!-- Renderizamos los productos dinámicamente -->
     <div
       class="product-container"
-      v-for="producto in productos"
-      :key="producto.id"
+      v-for="materia in materias_primas"
+      :key="materia.id"
     >
 
       <div class="product-info">
-        <p>Nombre: <span class="product-name">{{ producto.nombre }}</span></p>
-        <p>Unidad de Medida: <span class="product-description">{{ producto.unidadMedida }}</span></p>
-        <p>Cantidad: <span class="product-quantity">{{ producto.stockActual }}</span></p>
-        <p>Precio: <span class="product-price">${{ producto.precioUnitario }}</span></p>
+        <p>Nombre: <span class="product-name">{{ materia.nombre }}</span></p>
+        <p>Unidad de Medida: <span class="product-description">{{ materia.unidadMedida }}</span></p>
+        <p>Cantidad: <span class="product-quantity">{{ materia.stockActual }}</span></p>
+        <p>Precio: <span class="product-price">${{ materia.precioUnitario }}</span></p>
       </div>
     </div>
   </div>

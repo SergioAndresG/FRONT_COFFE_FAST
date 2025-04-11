@@ -1,37 +1,31 @@
 <script>
+import axios from 'axios';
 import lottie from 'lottie-web';
 
-
-//ejemplo de datos para facturas 
 export default {
   data() {
     return {
       animation: null,
       showMateriaPrimaPanel: false,
       showClientesPanel: false,
-      facturasMateriaPrima: [
-        { codigo: 'MP-001', fecha: '15/04/2024', proveedor: 'Distribuidora Alimentos S.A.', total: '$1,250.00' },
-        { codigo: 'MP-002', fecha: '10/04/2024', proveedor: 'Bebidas del Valle', total: '$890.50' },
-        { codigo: 'MP-003', fecha: '05/04/2024', proveedor: 'Carnicería Premium', total: '$2,340.75' },
-        { codigo: 'MP-004', fecha: '01/04/2024', proveedor: 'Panadería Dulce', total: '$450.25' }
-      ],
-      facturasClientes: [
-        { cedula: '001-1234567', fecha: '18/04/2024', cliente: 'Juan Pérez', total: '$850.00' },
-        { cedula: '001-7654321', fecha: '17/04/2024', cliente: 'María Rodríguez', total: '$1,200.50' },
-        { cedula: '001-9876543', fecha: '16/04/2024', cliente: 'Carlos Gómez', total: '$750.25' },
-        { cedula: '001-4567890', fecha: '15/04/2024', cliente: 'Ana Martínez', total: '$2,340.75' }
-      ]
+      facturasClientes: [],
+      fechaBusqueda: null,
+      mensajeError: ''  
     };
   },
 
-  //animacion de lottie
+
   mounted() {
     this.loadLottieAnimation();
     const link = document.createElement('link');
     link.rel = 'stylesheet';
     link.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css';
     document.head.appendChild(link);
+    
+    // Llamar al endpoint de facturas cuando se monta el componente
+    this.fetchFacturasClientes();
   },
+
   methods: {
     loadLottieAnimation() {
       this.animation = lottie.loadAnimation({
@@ -42,26 +36,97 @@ export default {
         path: 'https://lottie.host/dbd92ec6-d27a-461e-98ee-2fc39e3a5342/zft6pQtYyC.json'
       });
     },
-    toggleMateriaPrimaPanel() {
-      this.showMateriaPrimaPanel = !this.showMateriaPrimaPanel;
-          // se ciierra el panel de clientes si est abierto
-      if (this.showClientesPanel && this.showMateriaPrimaPanel) {
-        this.showClientesPanel = false;
+
+    async fetchFacturasClientes() {
+      try {
+        const response = await axios.get("http://localhost:8000/api/facturas/");
+        
+        if (response.data && response.data.data) {
+          this.facturasClientes = response.data.data.map(factura => ({
+            idFactura: factura.id || 'N/A',
+            fecha: factura.fecha_compra ? new Date(factura.fecha_compra).toLocaleDateString() : 'Sin fecha',
+            cliente: factura.cliente?.nombre || 'Cliente no especificado',
+            idCliente: factura.cliente?.id || 'N/A',
+            total: `$${(factura.precio_total || 0).toFixed(2)}`,
+            estadoPedido: factura.estado || factura.pedido?.estado || 'sin estado',
+            productos: Array.isArray(factura.productos) ? factura.productos.map(p => ({
+              nombre: p.nombre || 'Producto sin nombre',
+              cantidad: p.cantidad || 0,
+              precio: `$${(p.precio_unitario || 0).toFixed(2)}`,
+              subtotal: `$${(p.subtotal || 0).toFixed(2)}`
+            })) : []
+          }));
+        } else {
+          this.mensajeError = "Formato de respuesta inesperado";
+        }
+      } catch (error) {
+        console.error('Error completo:', error);
+        if (error.response) {
+          console.error('Datos del error:', error.response.data);
+          this.mensajeError = error.response.data?.detail || 
+                            error.response.data?.message || 
+                            "Error en el servidor";
+        } else {
+          this.mensajeError = "Error de conexión con el servidor";
+        }
+        this.facturasClientes = [];
       }
     },
-    toggleClientesPanel() {
-      this.showClientesPanel = !this.showClientesPanel;
-      // se cierra el panel de materia prima si esta abierto
-      if (this.showMateriaPrimaPanel && this.showClientesPanel) {
-        this.showMateriaPrimaPanel = false;
+
+      toggleMateriaPrimaPanel() {
+        this.showMateriaPrimaPanel = !this.showMateriaPrimaPanel;
+        if (this.showClientesPanel && this.showMateriaPrimaPanel) {
+          this.showClientesPanel = false;
+        }
+      },
+
+      toggleClientesPanel() {
+        this.showClientesPanel = !this.showClientesPanel;
+        if (this.showMateriaPrimaPanel && this.showClientesPanel) {
+          this.showMateriaPrimaPanel = false;
+        }
+      },
+    async buscarFacturasPorFecha() {
+      this.mensajeError = ''; // Reiniciar mensaje de error
+
+      if (!this.fechaBusqueda) {
+        this.mensajeError = 'Por favor selecciona una fecha.';
+        this.facturasClientes = [];
+        return;
+      }
+
+      try {
+        const response = await axios.get(`http://localhost:8000/api/facturas/por-fecha`, {
+          params: { fecha: this.fechaBusqueda }
+        });
+
+        if (response.data && Array.isArray(response.data) && response.data.length > 0) {
+          this.facturasClientes = response.data.map(factura => ({
+            idCliente: factura.cliente?.id || 'N/A',
+            fecha: new Date(factura.fecha_compra).toLocaleDateString(),
+            cliente: factura.cliente?.nombre || 'Cliente desconocido',
+            total: `$${factura.precio_total?.toFixed(2) || '0.00'}`,
+            idFactura: factura.id || 'N/A'
+          }));
+        } else {
+          this.facturasClientes = [];
+          this.mensajeError = 'Factura no encontrada.';
+        }
+      } catch (error) {
+        console.error('Error al buscar facturas por fecha:', error.response?.data || error.message);
+        this.facturasClientes = [];
+        this.mensajeError = 'Factura no encontrada.';
       }
     }
   },
+
   beforeDestroy() {
     if (this.animation) {
       this.animation.destroy();
     }
-  }
+  },
+
+    
 };
 </script>
 
@@ -76,11 +141,7 @@ export default {
     
     <div class="menu-container">
       <ul class="menu-amarillo">
-        <li @click="toggleMateriaPrimaPanel":class="{ activo: showMateriaPrimaPanel }"> 
-          <span class="icon"><i class="fas fa-box-open"></i></span>
-          <span>Facturas materia prima</span>
-        </li>
-        <li @click="toggleClientesPanel":class="{ activo: showClientesPanel }">
+        <li @click="toggleClientesPanel" :class="{ activo: showClientesPanel }">
           <span class="icon"><i class="fas fa-users"></i></span>
           <span>Facturas clientes</span>
         </li>  
@@ -91,27 +152,33 @@ export default {
         <h3><i class="fas fa-file-invoice" style="margin-right: 10px;"></i>Facturas de Clientes</h3>
         <div class="panel-content">
           <div class="form-group">
-            <label><i class="fas fa-search"></i> Buscar Factura</label>
-            <input type="text" placeholder="Cédula, Nombre del cliente...">
+            <label>Buscar Factura por Fecha</label>
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <input type="date" v-model="fechaBusqueda" class="fecha-input">
+              <button @click="buscarFacturasPorFecha" class="buscar-btn">
+                <i class="fas fa-search"></i>
+              </button>
+            </div>
           </div>
+
           
           <div class="facturas-table">
             <div class="table-header">
-              <div class="header-item">Cédula</div>
+              <div class="header-item">ID Cliente</div>
               <div class="header-item">Fecha</div>
               <div class="header-item">Cliente</div>
               <div class="header-item">Total</div>
-              <div class="header-item">Ver</div>
+              <div class="header-item">ID Factura</div>
+              <p v-if="mensajeError" class="mensaje-error">{{ mensajeError }}</p>
+
             </div>
             
             <div class="table-row" v-for="(factura, index) in facturasClientes" :key="index">
-              <div class="row-item">{{ factura.cedula }}</div>
+              <div class="row-item">{{ factura.idCliente }}</div>
               <div class="row-item">{{ factura.fecha }}</div>
               <div class="row-item">{{ factura.cliente }}</div>
               <div class="row-item">{{ factura.total }}</div>
-              <div class="row-item">
-                <i class="fas fa-image action-icon"></i>
-              </div>
+              <div class="row-item">{{ factura.idFactura }}</div>
             </div>
           </div>
           
@@ -123,6 +190,7 @@ export default {
     </div>
   </header>
 </template>
+
 
 <style scoped>
 @import url('https://fonts.googleapis.com/css2?family=Jura:wght@700&display=swap');
@@ -253,8 +321,9 @@ hr {
   font-family: 'Jura', sans-serif;
   z-index: 1;
   padding: 15px;
+  height: 500px;
   max-height: 400px; 
-  max-width: 910px;
+  max-width: 900px;
   overflow-y: auto;
 }
 
@@ -309,7 +378,7 @@ hr {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-top: -370px;
+  margin-top: -310px;
   margin-left: 700px;
   height: 30px;
 
@@ -321,6 +390,31 @@ hr {
   border: none;
   font-family: 'Jura', sans-serif;
 }
+.fecha-input {
+  padding: 6px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+}
+
+.buscar-btn {
+  background-color: #ffc107;
+  border: none;
+  border-radius: 5px;
+  padding: 6px 10px;
+  cursor: pointer;
+  color: #333;
+}
+
+.buscar-btn i {
+  font-size: 16px;
+}
+
+.mensaje-error {
+  color: red;
+  margin-top: 3px;
+  font-weight: bold;
+}
+
 
 .facturas-table {
   margin-top: 20px;

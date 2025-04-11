@@ -22,6 +22,10 @@ import ComSesion from "@/components/ComSesion.vue";
 import SnowFall from "@/components/SnowFall.vue";
 import { createRouter, createWebHistory } from "vue-router";
 import ComConProC from "@/components/ComConProC.vue";
+import ActulizacionPerfil from "@/components/ActualizacionPerfil.vue";
+import ComPCliente from "@/components/ComPCliente.vue";
+import ComPedidos from "@/components/ComPedidos.vue";
+import ComPfacturas from "@/components/ComPfacturas.vue";
 import FormAddStock from "@/components/FormAddStock.vue";
 
 const routes = [
@@ -141,6 +145,26 @@ const routes = [
         path: "/ConsultarProC",
         name: "ConsultarProC",
         component: ComConProC
+    },
+    {
+        path: "/ActualizarPerfil",
+        name: "ActualizarPerfil",
+        component: ActulizacionPerfil
+    },
+    {
+        path:"/Clientes",
+        name:"PedidoCliente",
+        component: ComPCliente
+    },
+    {
+        path:"/Pedidos",
+        name:"Pedidos",
+        component: ComPedidos
+    },
+    {
+        path: "/Facturas",
+        name:"Facturas",
+        component:ComPfacturas
     },
     {
         path: "/FormAddStock",

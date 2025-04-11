@@ -7,6 +7,7 @@ const categorias = ref([]);
 const ingredientes = ref([]);
 const unidades = ref([]);
 const productos = ref([]);
+const usuario = ref([]);
 
 const showIngredientesModal = ref(false);
 const showCantidadModal = ref(false);
@@ -20,6 +21,7 @@ const currentIngrediente = ref(null);
 const formData = ref({
   nombre: "",
   precio: null,
+  precio_entrada: null,
   cantidad: null,
   id_empleado: 0,
   categoria: "",
@@ -92,6 +94,17 @@ const cargarUnidadMedida = async () => {
 }
 
 cargarUnidadMedida();
+
+const cargarEmpleados = async () => {
+  try {
+    const respuesta = await axios.get("http://127.0.0.1:8000/usuarios");
+    usuario.value = respuesta.data;  
+  } catch (error) {
+    console.error("Error al cargar los usuarios");
+  }
+}
+
+cargarEmpleados()
 
 const handleImageUpload = (event: Event) => {
   const file = (event.target as HTMLInputElement).files?.[0];
@@ -234,28 +247,32 @@ const handleSubmit = async () => {
       });
       return;
     }
-    
+
     // Crear un objeto FormData para enviar tanto los datos como la imagen
     const form = new FormData();
     form.append("nombre", formData.value.nombre);
     form.append("cantidad", formData.value.cantidad?.toString() ?? "0");
-    form.append("precio_unitario", formData.value.precio?.toString() ?? "0");
     form.append("id_usuario", formData.value.id_empleado.toString());
     form.append("categoria", formData.value.categoria);
     form.append("stock_minimo", formData.value.stockMinimo?.toString() ?? "0");
     form.append("tipo", formData.value.tipo);
 
-    // Si es tipo HECHO, enviar los ingredientes
-    if (formData.value.tipo === "HECHO") {
-       form.append("preparar_inicial", "true");
-        // Preparar lista de ingredientes en el formato que espera el backend
+
+
+    if (formData.value.tipo === "COMPRADO") {
+      form.append("precio_entrada", formData.value.precio_entrada?.toString() ?? "0");
+      form.append("precio_salida", formData.value.precio?.toString() ?? "0");
+    } else if (formData.value.tipo === "HECHO") {
+      form.append("precio_salida", formData.value.precio?.toString() ?? "0");
+      form.append("preparar_inicial", "true");
+          // Preparar lista de ingredientes en el formato que espera el backend
       const ingredientesParaEnviar = formData.value.ingredientes.map(ing => ({
         materia_prima_id: ing.id,
         cantidad_ingrediente: ing.cantidad,
         unidad_id: ing.unidad_id,
       }));
-      
-      // Convertir a string JSON
+        
+        // Convertir a string JSON
       const ingredientesJsonString = JSON.stringify(ingredientesParaEnviar);
       form.append("ingredientes", ingredientesJsonString);
     }
@@ -288,6 +305,7 @@ const handleSubmit = async () => {
     formData.value = {
       nombre: "",
       precio: null,
+      precio_entrada: null,
       cantidad: null,
       id_empleado: 0,
       categoria: "PLATO",
@@ -334,13 +352,27 @@ const closeModal = () => {
             <label for="cantidad">Cantidad:</label>
             <input type="number" id="cantidad" v-model="formData.cantidad" placeholder="Ingrese la cantidad" required />
 
-            <label for="precio">Precio Unitario:</label>
-            <input type="number" id="precio" v-model="formData.precio" placeholder="Ingrese el precio unitario" required />
+            <label for="precio">Precio de venta:</label>
+            <input type="number" id="precio" v-model="formData.precio" placeholder="Ingrese el precio para vender el producto"  required />
           </div>
 
           <div class="column">
-            <label for="idEmpleado">ID Empleado:</label>
-            <input type="number" id="idEmpleado" v-model="formData.id_empleado" placeholder="Ingrese el ID del empleado que registra" required />
+            <label for="nombre">Nombre de quien agrega el producto:</label>
+
+            <select
+              id="idEmpleado"
+                v-model="formData.id_empleado"
+                required
+              >
+                <option value="">Seleccione una categoría</option>
+                <option
+                   v-for="usuarioItem in usuario"
+                  :key="usuarioItem.id"
+                  :value="usuarioItem.id"
+                >
+                  {{ usuarioItem.nombre }}
+                </option>
+            </select>
 
             <label for="categoria">Categoría:</label>
             <select id="categoria" v-model="formData.categoria" required>
@@ -349,11 +381,23 @@ const closeModal = () => {
                     {{ categoria }}
                 </option>
             </select>
+
             <label for="tipo">Tipo:</label>
             <select id="tipo" v-model="formData.tipo" required>
               <option value="HECHO">Hecho</option>
               <option value="COMPRADO">Comprado</option>
             </select>
+
+            <!-- Mostrar input de precio de entrada si es COMPRADO -->
+            <label v-if="formData.tipo === 'COMPRADO'" for="precioEntrada">Precio de Entrada:</label>
+            <input 
+              v-if="formData.tipo === 'COMPRADO'" 
+              type="number" 
+              id="precioEntrada" 
+              v-model="formData.precio_entrada" 
+              placeholder="Ingrese el precio de entrada" 
+              required 
+            />
            <transition class="fade-expand">
                 <div v-if="formData.tipo === 'HECHO'" class="ingredientes-button-container">
                    <button type="button" @click="openIngredientesModal" class="btn-agregar-receta">
@@ -364,12 +408,12 @@ const closeModal = () => {
                   </span>
                 </div>
             </transition>
+
             
             <label for="stockMinimo">Stock Mínimo:</label>
             <input type="number" id="stockMinimo" v-model="formData.stockMinimo" placeholder="Ingrese el stock mínimo" required />
 
             <label for="imagen">Agregar imagen:</label>
-            
             <input type="file" id="imagen" @change="handleImageUpload">
           </div>
 

@@ -1,15 +1,16 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
+import { ref, onBeforeUnmount, onMounted, computed } from 'vue';
 import ComImagen from './icons/IMGENES/ComImagen.vue';
-import Swal from "sweetalert2";  // Asegúrate de importar SweetAlert2
-import { jsPDF } from "jspdf"; // Asegure de importar jsPdf
+import Swal from "sweetalert2";  // Aseguye de importar SweetAlert2
+import { useRouter } from 'vue-router';
 import axios from 'axios';
 
+const router = useRouter();
 
 interface Producto {
   id: number,
   nombre: string;
-  precio_unitario: number;
+  precio: number;
   ruta_imagen: string;
   categoria: string;
   cantidad: number;
@@ -20,16 +21,20 @@ const carrito = ref<Producto[]>([]);
 const mostrarModal = ref(false);
 const compraExitosa = ref(false);
 const categorias = ref<string[]>([]);
-const producto = ref([]);
+const productos = ref<Producto[]>([]);
+
+const carritoWidth = ref(350); 
+const isResizing = ref(false);
+const startX = ref(0);
+const startWidth = ref(0);
 
 const obtenerProductos = async () => {
   try {
-    const response = await axios.get('http://localhost:8000/productos'); // cambia el endpoint si es necesario
-    // Mapea los datos para que encajen con tu lógica
-    carrito.value = response.data.map((p: any) => ({
+    const response = await axios.get('http://localhost:8000/productos');
+    productos.value = response.data.map((p: any) => ({
       id: p.id,
       nombre: p.nombre,
-      precio_unitario: p.precio_unitario,
+      precio: p.precio_salida, 
       ruta_imagen: p.ruta_imagen,
       categoria: p.categoria,
       cantidad: 1
@@ -39,13 +44,10 @@ const obtenerProductos = async () => {
   }
 };
 
-
-
 onMounted(async() => {
   await obtenerProductos();
   console.log(carrito.value);
 });
-
 
 async function obtenerCategorias() {
   try {
@@ -61,6 +63,43 @@ onMounted(() => {
 });
 
 
+//Redimensionar el carrito de productos
+const iniciarResize = (e: MouseEvent) => {
+  // Solo se  redimensionar si se hace clic en el area del handle
+  if (!(e.target as HTMLElement).classList.contains('resize-handle')) return;
+  
+  isResizing.value = true;
+  startX.value = e.clientX;
+  startWidth.value = carritoWidth.value;
+  
+  document.addEventListener('mousemove', duranteResize);
+  document.addEventListener('mouseup', detenerResize);
+  
+  e.preventDefault();
+};
+
+const duranteResize = (e: MouseEvent) => {
+  if (!isResizing.value) return;
+  
+  const deltaX = e.clientX - startX.value;
+  const newWidth = startWidth.value + deltaX;
+  
+  carritoWidth.value = Math.max(300, Math.min(800, newWidth));
+};
+
+const detenerResize = () => {
+  isResizing.value = false;
+  document.removeEventListener('mousemove', duranteResize);
+  document.removeEventListener('mouseup', detenerResize);
+};
+
+// limpiar los listeners cuando el componente se desmonte
+onBeforeUnmount(() => {
+  document.removeEventListener('mousemove', duranteResize);
+  document.removeEventListener('mouseup', detenerResize);
+});
+
+// Agregar al carrito (si el producto ya existe, solo aumentamos la cantidad)
 // Agregar al carrito (si el producto ya existe, solo aumentamos la cantidad)
 const agregarAlCarrito = (producto: Producto) => {
   const productoExistente = carrito.value.find(p => p.id === producto.id);
@@ -75,41 +114,44 @@ const agregarAlCarrito = (producto: Producto) => {
     title: "El producto ha sido agregado",
     text: `Agregado al carrito: ${producto.nombre}`,
   });
+  console.log("Producto recibido:", producto);
+
 };
+
+
 
 //Computed para filtrar los productos por categoría
 //AMASIJOS
 const productosAmasijos = computed(() =>
-  carrito.value.filter(p => p.categoria.toUpperCase() === "AMASIJOS")
+productos.value.filter(p => p.categoria.toUpperCase() === "AMASIJOS")
 );
 
 //BEBIDAS FRIAS
 const productosBFRIAS = computed(() =>
-  carrito.value.filter(p => p.categoria.toUpperCase() === "BEBIDAS_FRIAS")
+productos.value.filter(p => p.categoria.toUpperCase() === "BEBIDAS_FRIAS")
 );
 
 //BEBIDAS CALIENTES
 const productosBCALIENTES = computed(() =>
-  carrito.value.filter(p => p.categoria.toUpperCase() === "BEBIDAS_CALIENTES")
+productos.value.filter(p => p.categoria.toUpperCase() === "BEBIDAS_CALIENTES")
 );
 
 //DESAYUNOS
 const productosDESAYUNOS = computed(() =>
-  carrito.value.filter(p => p.categoria.toUpperCase() === "DESAYUNOS")
+productos.value.filter(p => p.categoria.toUpperCase() === "DESAYUNOS")
 );
 
 //HOJALDRES
 const productosHOJALDRES = computed(() =>
-  carrito.value.filter(p => p.categoria.toUpperCase() === "HOJALDRES")
+productos.value.filter(p => p.categoria.toUpperCase() === "HOJALDRES")
 );
 
 //MALTEADAS
 const productosMALTEADAS = computed(() =>
-  carrito.value.filter(p => p.categoria.toUpperCase() === "MALTEADAS")
+productos.value.filter(p => p.categoria.toUpperCase() === "MALTEADAS")
 );
 
-
-
+  
 
 // Función para aumentar la cantidad
 const incrementarCantidad = (index: number) => {
@@ -133,12 +175,83 @@ const eliminarProducto = (index: number) => {
 // Funcion para comprar los productos y para mostrar la factura a la hora de la compra
 
 let carritoFacturado = []; // Variable global para guardar la compra
+const finalizarCompra = async (clienteData) => {
+  try {
+    const total = carrito.value.reduce((sum, producto) => {
+      return sum + (producto.precio * producto.cantidad);
+    }, 0);
+
+    const productosParaEnviar = carrito.value.map(producto => ({
+        producto_id: producto.id,
+        cantidad: producto.cantidad,
+        precio_salida: producto.precio
+    }));
+
+    const pedidoData = {
+      cliente_id: clienteData.clienteId, 
+      fecha: new Date().toISOString(),
+      total: total,
+      estado: "nuevo",
+      factura_id: null,
+      productos: productosParaEnviar,
+    };
+    console.log("Productos para enviar:", productosParaEnviar);
+
+    const response = await axios.post("http://localhost:8000/pedidos", pedidoData);
+    
+    if (response.status === 200 || response.status === 201) {
+      // Guardar información importante en localStorage para recuperarla en la vista de cliente
+      localStorage.setItem('cliente_actual', JSON.stringify({
+        nombre: clienteData.nombre,
+        tipoId: clienteData.tipoId,
+        numeroId: clienteData.numeroId
+      }));
+      
+      if (response.data && response.data.pedido_id) {
+        localStorage.setItem('pedido_id', response.data.pedido_id);
+      } else if (response.data && response.data.id) {
+        // Alternativa si la API devuelve el ID con otro nombre
+        localStorage.setItem('pedido_id', response.data.id.toString());
+      }
+      
+      // Vaciar carrito
+      carrito.value = [];
+      compraExitosa.value = true;
+      mostrarModal.value = false;
+      
+      // Mostrar alerta y después redireccionar
+      await Swal.fire({
+        icon: "success",
+        title: "Pedido enviado correctamente",
+        text: `Tu pedido ha sido registrado correctamente.`,
+        confirmButtonText: "Ver estado del pedido"
+      });
+      
+      // Redireccionar DESPUÉS de que el usuario cierre la alerta
+      const pedidoId = response.data.pedido_id || response.data.id;
+      router.push({
+        path: '/Clientes',
+        query: { 
+          pedidoId: pedidoId,
+          clienteId: clienteData.numeroId,
+          nombre: clienteData.nombre,
+          tipoId: clienteData.tipoId
+        }
+      });
+    }
+  } catch (error) {
+    console.error("Error al enviar el pedido:", error);
+    Swal.fire({
+      icon: "error",
+      title: "Error al enviar el pedido",
+      text: error.response?.data?.detail || "Ocurrió un error inesperado."
+    });
+  }
+};
 
 const comprarProductos = async () => {
   if (carrito.value.length === 0) {
-    // me cierra el modal del carrito para mostrar la alerta
     mostrarModal.value = false;
-    // me asegura que cualquier otra alerta este cerrada para mostrar la advertencia
     Swal.close();
 
     Swal.fire({
@@ -153,124 +266,139 @@ const comprarProductos = async () => {
     return;
   }
 
-  const productosCantidad = {};
+  let mensaje = "<h3>Resumen de tu compra:</h3><ul style='text-align:left'>";
+  let totalCompra = 0;
   carrito.value.forEach((producto) => {
-    productosCantidad[producto.id] = producto.cantidad;
+    let totalProducto = producto.precio * producto.cantidad;
+    mensaje += `<li><strong>Producto:</strong> ${producto.nombre} <br>  
+                <strong>Cantidad:</strong> ${producto.cantidad} <br> 
+                <strong>Precio unitario:</strong> $${producto.precio} <br> 
+                <strong>Total:</strong> $${totalProducto}</li><hr>`;
+    totalCompra += totalProducto;
+  });
+  mensaje += `</ul><h2>Total a pagar: $${totalCompra}</h2>`;
+
+  mostrarModal.value = false;
+  
+  await Swal.fire({
+    icon: "info",
+    title: "Resumen de la compra",
+    html: mensaje,
+    confirmButtonText: "Continuar",
+    allowOutsideClick: false,
+    allowEscapeKey: false,
+    backdrop: true,
   });
 
-  try {
-    // 2. Enviar la compra al backend
-    const response = await axios.post("http://localhost:8000/comprar", productosCantidad);
-    
-    // 3. Mostrar resumen solo si fue exitosa
-    let mensaje = "<h3>Resumen de tu compra:</h3><ul style='text-align:left'>";
-    let totalCompra = 0;
-    carritoFacturado = JSON.parse(JSON.stringify(carrito.value));
-    carrito.value.forEach((producto) => {
-      let totalProducto = producto.precio_unitario * producto.cantidad;
-      mensaje += `<li><strong>Producto:</strong> ${producto.nombre} <br>  
-                  <strong>Cantidad:</strong> ${producto.cantidad} <br> 
-                  <strong>Precio unitario:</strong> $${producto.precio_unitario} <br> 
-                  <strong>Total:</strong> $${totalProducto}</li><hr>`;
-      totalCompra += totalProducto;
-    });
-    mensaje += `</ul><h2>Total a pagar: $${totalCompra}</h2>`;
+  
+  // Configuración del formulario con tamaño aumentado
+  const { value: formValues } = await Swal.fire({
+    title: '<span style="font-family: \'Jura\', sans-serif; font-size: 1.5rem">Datos del cliente</span>',
+    html: `
+      <div style="font-family: 'Jura', sans-serif; font-size: 1.1rem">
+        <input id="swal-input1" style="font-family: inherit; width: 95%; padding: 15px; margin: 12px 0; border: 1px solid gold; background: black; color: white; font-size: 1rem" placeholder="Nombre completo">
+        <select id="swal-input2" style="font-family: inherit; width: 95%; padding: 15px; margin: 12px 0; border: 1px solid gold; background: black; color: white; font-size: 1rem">
+          <option value="">Tipo de documento</option>
+          <option value="cedula_de_ciudadania">Cédula de ciudadanía</option>
+          <option value="Ccedula_de_extranjeria">Cédula de extranjería</option>
+          <option value="tarjeta_identidad">Tarjeta de Identidad</option>
+        </select>
+        <input id="swal-input3" style="font-family: inherit; width: 95%; padding: 15px; margin: 12px 0; border: 1px solid gold; background: black; color: white; font-size: 1rem" placeholder="Número de documento" type="number" maxlength="10">
+      </div>`,
+    background: 'black',
+    color: 'white',
+    width: '650px', 
+    padding: '2rem',
+    showCancelButton: true,
+    confirmButtonText: 'Continuar',
+    cancelButtonText: 'Cancelar',
+    confirmButtonColor: 'gold',
+    cancelButtonColor: '#333',
+    allowOutsideClick: false,
+    focusConfirm: false,
+    customClass: {
+      popup: 'custom-swal-popup',
+      header: 'custom-swal-header',
+      title: 'custom-swal-title',
+      content: 'custom-swal-content',
+      actions: 'custom-swal-actions',
+      confirmButton: 'custom-swal-confirm',
+      cancelButton: 'custom-swal-cancel'
+    },
+    preConfirm: () => {
+      const nombre = (document.getElementById('swal-input1') as HTMLInputElement)?.value.trim();
+      const tipoId = (document.getElementById('swal-input2') as HTMLSelectElement)?.value;
+      const numeroId = (document.getElementById('swal-input3') as HTMLInputElement)?.value.trim();
+      
+      // Validación del nombre
+      if (!nombre || nombre.split(' ').length < 2) {
+        Swal.showValidationMessage('<span style="color: #ff4444; font-size: 1rem; font-family: Jura, sans-serif">Debe ingresar nombre y apellido completos</span>');
+        return false;
+      }
+      
+      // Validación del tipo de documento
+      if (!tipoId) {
+        Swal.showValidationMessage('<span style="color: #ff4444; font-size: 1rem; font-family: Jura, sans-serif">Seleccione un tipo de documento valido</span>');
+        return false;
+      }
+      
+      // Validación del documento
+      if (!numeroId) {
+        Swal.showValidationMessage('<span style="color: #ff4444; font-size: 1rem;font-family: Jura, sans-serif">El numero de documento es obligatorio</span>');
+        return false;
+      }
+      
+      if (!/^\d+$/.test(numeroId)) {
+        Swal.showValidationMessage('<span style="color: #ff4444; font-size: 1rem; font-family: Jura, sans-serif">Solo se permiten números en el documento</span>');
+        return false;
+      }
+      
+      if (numeroId.length < 8 || numeroId.length > 10) {
+        Swal.showValidationMessage('<span style="color: #ff4444; font-size: 1rem;font-family: Jura, sans-serif">El documento debe tener entre 8 y 10 dígitos</span>');
+        return false;
+      }
+      
+      return { nombre, tipoId, numeroId };
+    }
+  });
 
-    mostrarModal.value = false;
-    Swal.fire({
-      icon: "success",
-      title: "Compra realizada",
-      html: mensaje,
-      confirmButtonText: "Aceptar",
-      allowOutsideClick: false,
-      allowEscapeKey: false,
-      backdrop: true,
+  // Si falla la validación
+  if (!formValues) {
+    await Swal.fire({
+      icon: 'error',
+      title: '<span style="font-family: \'Jura\', sans-serif; color: #ff4444">Error en los datos</span>',
+      html: '<div style="font-family: \'Jura\', sans-serif; font-size: 1.2rem">Verifique que todos los campos esten correctamente diligenciados</div>',
+      width: '600px',
+      background: 'white',
+      confirmButtonColor: 'gold',
       customClass: {
-        popup: "swal2-popup-zindex",
-      },
-      didOpen: () => {
-        const swalContent = Swal.getHtmlContainer();
-        const botonDescargar = document.createElement("button");
-        botonDescargar.textContent = "Descargar Factura";
-        botonDescargar.classList.add("swal2-confirm");
-        botonDescargar.style.marginTop = "10px";
-        botonDescargar.addEventListener("click", generarPDF);
-        swalContent.appendChild(botonDescargar);
-      },
+        popup: 'custom-swal-popup-error',
+        icon: 'custom-swal-icon-error',
+        title: 'custom-swal-title-error'
+      }
     });
-
-    compraExitosa.value = true;
-    carrito.value = [];
-    await obtenerProductos();
+    return;
+  }
+    try {
+    const clienteResponse = await axios.post("http://localhost:8000/pedidos/clientes", {
+      nombre: formValues.nombre,
+      tipo_id: formValues.tipoId,
+      numero_id: formValues.numeroId
+    });
+    
+    const clienteId = clienteResponse.data.id;
+    
+    // Pass the clientId to finalizarCompra
+    await finalizarCompra({...formValues, clienteId});
   } catch (error) {
-    Swal.close();
+    console.error("Error al crear/obtener cliente:", error);
     Swal.fire({
       icon: "error",
-      title: "Error al procesar la compra",
-      text: error.response?.data?.detail || "Ocurrió un error inesperado.",
-      allowOutsideClick: false,
-      allowEscapeKey: false,
-      backdrop: true,
+      title: "Error con los datos del cliente",
+      text: error.response?.data?.detail || "Ocurrió un error inesperado."
     });
   }
 };
-
-
-//Funcion para descargar la factura
-const generarPDF = () => {
-  const doc = new jsPDF();//instancia para crear el documento en pdf
-
-
-  //configuraciones de estilos
-  doc.setFontSize(18);
-  doc.setFont("helvetica", "bold");
-  doc.text("Factura de Compra", 20, 20);
-
-
-  //configuraciones para el cliente....esto es mas adelante pero lo pongo de una vez 
-  doc.setFontSize(12);
-  doc.setFont("helvetica", "normal");
-  doc.text("Fecha: " + new Date().toLocaleDateString(), 20, 30);
-  doc.text("Cliente: Nombre del Cliente", 20, 40);
-
-  //configuraciones de mas estilos....este es para hacer de separador entre productos
-  doc.setLineWidth(0.5);
-  doc.line(20, 45, 190, 45);
-
-  //detalles de la compra con sus estilos
-  let y = 55;
-  doc.setFontSize(12);
-  doc.text("Detalle de la compra:", 20, y);
-  y += 10;
-
-
-  // esta es la lista con los productos comprados y facturados 
-  carritoFacturado.forEach((producto, index) => {
-    doc.setFont("helvetica", "bold");
-    doc.text(`${index + 1}. Producto: ${producto.nombre}`, 20, y);
-    doc.setFont("helvetica", "normal");
-    doc.text(`Cantidad: ${producto.cantidad}`, 20, y + 5);
-    doc.text(`Precio unitario: $${producto.precio_unitario}`, 20, y + 10);
-    doc.text(`Total: $${producto.precio_unitario * producto.cantidad}`, 20, y + 15);
-    
-    y += 25;
-  });
-
-  doc.setLineWidth(0.5);
-  doc.line(20, y, 190, y);
-  y += 10;
-
-  doc.setFontSize(14);
-  doc.setFont("helvetica", "bold");
-  doc.text(`Total a pagar: $${carritoFacturado.reduce((acc, p) => acc + p.precio_unitario * p.cantidad, 0)}`, 20, y);
-
-
-  //se guarda todo en el archivo pdf
-  doc.save("Factura_Compra.pdf");
-};
-
-
-
 
 
 // Función para abrir el carrito (al hacer clic en el ícono del carrito)
@@ -280,9 +408,12 @@ const abrirCarrito = () => {
 
 // Modificación en la función cerrarCarrito para permitir continuar comprando
 const cerrarCarrito = () => {
-  compraExitosa.value = false; // Restablecer estado de compra exitosa
-  mostrarModal.value = false;  // Cerrar el modal
+  compraExitosa.value = false;
+  mostrarModal.value = false;
+  // Restaurar scroll del body
+  document.body.style.overflow = '';
 };
+
 
 //esto no lo borre por que es el icon de carrito y el menu scroll
 
@@ -352,24 +483,30 @@ window.addEventListener("scroll", () => {
 
 
   <div>
-  <div v-if="mostrarModal" class="modal">
-    <div class="modal-contenido">
-      <h3 class="te">Carrito de Compras</h3>
-      <p class="tex">Estos son los productos que estás eligiendo para la compra:</p>
+    <transition name="carrito-background">
+    <div v-if="mostrarModal" class="carrito">
+      <div 
+        class="carrito-c" 
+        :style="{ width: carritoWidth + 'px' }"
+        @mousedown="iniciarResize"
+      >
+        <div class="resize-handle"></div>
+        <h3 class="te">Agregados al carrito</h3>
+        <p class="tex">Estos son tus productos:</p>
 
-      <div v-if="compraExitosa" class="mensaje-exito">
-        <h2>¡Compra realizada correctamente!</h2>
-        <p>Gracias por tu compra. Te esperamos pronto.</p>
-        <button @click="cerrarCarrito" class="botonx">X</button>
-      </div>
+        <div v-if="compraExitosa" class="mensaje-exito">
+          <h2>¡Compra realizada correctamente!</h2>
+          <p>Gracias por tu compra. Te esperamos pronto.</p>
+          <button @click="cerrarCarrito" class="botonx">X</button>
+        </div>
 
       <div v-else>
         <ul class="este">
           <li v-for="(producto, index) in carrito" :key="index" class="producto-carrito">
             <div class="carta1">
-              <img :src="`http://127.0.0.1:8000/productos/${producto.ruta_imagen}`":alt= "producto.nombre"  class="imagen-producto" />
+              <img v-if="producto.ruta_imagen" :src="`http://127.0.0.1:8000/productos/${producto.ruta_imagen}`" alt="Imagen producto" class="imagen-producto" />
               <p class="t">{{ producto.nombre }}</p>
-              <p class="t">${{ producto.precio_unitario }}</p>
+              <p class="t">${{ producto.precio }}</p>
 
               <div class="cantidad-control">
                 <label for="cantidad">Cantidad:</label>
@@ -381,8 +518,8 @@ window.addEventListener("scroll", () => {
               </div>
 
               <div class="precio">
-                <p class="t"><strong>Precio unitario:</strong> ${{ producto.precio_unitario }}</p>
-                <p class="t"><strong>Total:</strong> ${{ producto.precio_unitario * producto.cantidad }}</p>
+                <p class="t"><strong>Precio unitario:</strong> ${{ producto.precio }}</p>
+                <p class="t"><strong>Total:</strong> ${{ producto.precio * producto.cantidad }}</p>
               </div>
 
               <span @click="eliminarProducto(index)" class="eliminar">&#10005;</span>
@@ -390,12 +527,13 @@ window.addEventListener("scroll", () => {
           </li>
         </ul>
 
-        <button @click="comprarProductos" class="boton-comprar">Comprar</button>
+        <button @click="comprarProductos" class="boton-comprar">Enviar Pedido</button>
         <button @click="cerrarCarrito" class="botonx">X</button>
   
       </div>
     </div>
-  </div>
+    </div>
+</transition>
 </div>
 
 
@@ -413,7 +551,7 @@ window.addEventListener("scroll", () => {
     >
       <img v-if="producto.ruta_imagen" :src="`http://127.0.0.1:8000/productos/${producto.ruta_imagen}`" :alt="producto.nombre" class="carta-imagen" />
       <h3 class="carta-titulo">{{ producto.nombre }}</h3>
-      <p class="carta-descripcion">${{ producto.precio_unitario }}</p>
+      <p class="carta-descripcion">${{ producto.precio }}</p>
       <button @click="agregarAlCarrito(producto)">Agregar al carrito</button>
     </div>
   </div>
@@ -432,7 +570,7 @@ window.addEventListener("scroll", () => {
     >
       <img v-if="producto.ruta_imagen" :src="`http://127.0.0.1:8000/productos/${producto.ruta_imagen}`" :alt="producto.nombre" class="carta-imagen" />
       <h3 class="carta-titulo">{{ producto.nombre }}</h3>
-      <p class="carta-descripcion">${{ producto.precio_unitario }}</p>
+      <p class="carta-descripcion">${{ producto.precio }}</p>
       <button @click="agregarAlCarrito(producto)">Agregar al carrito</button>
     </div>
   </div>
@@ -451,7 +589,7 @@ window.addEventListener("scroll", () => {
     >
       <img v-if="producto.ruta_imagen" :src="`http://127.0.0.1:8000/productos/${producto.ruta_imagen}`" :alt="producto.nombre" class="carta-imagen" />
       <h3 class="carta-titulo">{{ producto.nombre }}</h3>
-      <p class="carta-descripcion">${{ producto.precio_unitario }}</p>
+      <p class="carta-descripcion">${{ producto.precio }}</p>
       <button @click="agregarAlCarrito(producto)">Agregar al carrito</button>
     </div>
   </div>
@@ -472,7 +610,7 @@ window.addEventListener("scroll", () => {
     >
       <img v-if="producto.ruta_imagen" :src="`http://127.0.0.1:8000/productos/${producto.ruta_imagen}`" :alt="producto.nombre" class="carta-imagen" />
       <h3 class="carta-titulo">{{ producto.nombre }}</h3>
-      <p class="carta-descripcion">${{ producto.precio_unitario }}</p>
+      <p class="carta-descripcion">${{ producto.precio }}</p>
       <button @click="agregarAlCarrito(producto)">Agregar al carrito</button>
     </div>
   </div>
@@ -492,7 +630,7 @@ window.addEventListener("scroll", () => {
     >
       <img v-if="producto.ruta_imagen" :src="`http://127.0.0.1:8000/productos/${producto.ruta_imagen}`" :alt="producto.nombre" class="carta-imagen" />
       <h3 class="carta-titulo">{{ producto.nombre }}</h3>
-      <p class="carta-descripcion">${{ producto.precio_unitario }}</p>
+      <p class="carta-descripcion">${{ producto.precio }}</p>
       <button @click="agregarAlCarrito(producto)">Agregar al carrito</button>
     </div>
   </div>
@@ -512,7 +650,7 @@ window.addEventListener("scroll", () => {
     >
       <img v-if="producto.ruta_imagen" :src="`http://127.0.0.1:8000/productos/${producto.ruta_imagen}`" :alt="producto.nombre" class="carta-imagen" />
       <h3 class="carta-titulo">{{ producto.nombre }}</h3>
-      <p class="carta-descripcion">${{ producto.precio_unitario }}</p>
+      <p class="carta-descripcion">${{ producto.precio}}</p>
       <button @click="agregarAlCarrito(producto)">Agregar al carrito</button>
     </div>
   </div>
@@ -545,74 +683,476 @@ window.addEventListener("scroll", () => {
 </template>
 
 <style scoped>
+/* Fuentes y estilos base */
 @import url('https://fonts.googleapis.com/css2?family=Jura:wght@700&display=swap');
 
+body {
+  font-family: 'Jura', sans-serif;
+  color: black;
+}
+
+/* Estilos para SweetAlert */
 .swal2-popup-zindex {
-  z-index: 9999 !important; /* me asegura que la factura este por encima de cualquier otro modal */
+  z-index: 9999 !important;
+}
+
+/* Header */
+header {
+  padding: 10px;
+  margin-left: 143px;
+  background-color: #000000;
+}
+
+#text1 {
+  height: 200px;
+  width: 750px;
+  font-family: 'Jura', sans-serif;
+  margin-left: 385px;
+  font-size: 20px;
+  margin-top: -135px;
+  transition: transform 0.3s ease, color 0.3s ease; 
+}
+
+#text1:hover {
+  transform: scale(1.1); 
+  color: #FFF1C6; 
+}
+
+/* Navegación */
+nav {
+  margin-left: -73px;
+}
+
+#menu-inicial {
+  color: #D9AB23;
+  position: relative;
+  z-index: 1000;
+  padding: 15px;
+}
+
+#menu-fijo {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  margin-left: -60px;
+  background-color: #000000;
+  z-index: 1000;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+  transform: translateY(-100%); 
+  transition: transform 0.3s ease; 
+}
+
+#menu-fijo.activo {
+  transform: translateY(0);
+}
+
+.menu-hamburguesa {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+ul.menu {
+  list-style: none;
+  margin-left: 90px;
+  padding: 0;
+  display: flex;
+  gap: 15px;
+}
+
+ul.menu li {
+  font-size: 16px;
+  font-family: 'Jura', sans-serif;
+}
+
+ul.menu li a, 
+ul.menu li router-link {
+  text-decoration: none;
+  color: #D9AB23;
+}
+
+.carrito-icono {
+  margin-left: 5px;
+  font-size: 18px;
+  color: #ffffff;
+  cursor: pointer;
+}
+
+/* Líneas divisoras */
+hr {
+  border-top: 2px solid #D9AB23;
+  width: 1420px;
+  margin-left: 5%;
+  margin-top: -50px;
+}
+
+#l2 {
+  margin-top: 20px;
+  width: 890px;
+  margin-left: 22%;
+}
+
+#l3 {
+  background-color: #D9AB23;
+  border-top: 2px solid #D9AB23;
+  width: 640px;
+  margin-left: 4%;
+  margin-top: -210px;
+}
+
+#l1 {
+  margin-top: -11px;
+  width: 640px;
+  margin-left: 56%;
+}
+
+/* Secciones de productos */
+.section-title {
+  text-align: center;
+  color: #A65814;
+  height: 200px;
+  width: 80px;
+  font-family: 'Jura', sans-serif;
+  margin-left: 740px;
+  font-size: 24px;
+  margin-top: 60px;
+  transition: transform 0.3s ease, color 0.3s ease; 
+}
+
+#desayunos {
+  font-size: 20px;
+}
+
+/* Tarjetas de productos */
+#cartas-contenedor {
+  display: grid;
+   grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+  margin: 50px 4%; 
+}
+
+.carta {
+  background-color: #fffaf0;
+  border: 2px solid #d9ab23;
+  border-radius: 10px;
+  height: 320px;
+  padding: 20px;
+  text-align: center;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.carta:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.carta-imagen {
+  width: 100%;
+  height: 60%;
+  border-radius: 10px;
+  object-fit: cover;
+}
+
+.carta-titulo {
+  font-size: 20px;
+  color: #a65814;
+  margin-top: -5px;
+  font-family: 'Jura', sans-serif;
+}
+
+.carta-descripcion,
+.carta-descripcion1 {
+  font-size: 16px;
+  color: #333;
+  margin-top: -5px;
+  font-family: 'Jura', sans-serif;
+}
+
+/* Botones generales */
+button {
+  background-color: #D9AB23;
+  color: white;
+  padding: 10px 20px; 
+  border: none;
+  border-radius: 5px; 
+  font-size: 16px; 
+  font-family: 'Jura', sans-serif;
+  cursor: pointer; 
+  transition: background-color 0.3s ease, transform 0.2s ease; 
+}
+
+button:hover {
+  background-color: #A65814;
+  transform: scale(1.05); 
+}
+
+button:active {
+  background-color: #000000; 
+  transform: scale(0.98); 
+}
+
+button:disabled {
+  background-color: #b0bec5; 
+  cursor: not-allowed; 
+}
+
+/* Transición para el carrito */
+.carrito-enter-active {
+  animation: slideIn 0.4s ease-out forwards;
+}
+
+.carrito-leave-active {
+  animation: slideOut 0.3s ease-in forwards;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideOut {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(100%);
+    opacity: 0;
+  }
 }
 
 
-  body {
-      font-family: 'Jura', sans-serif;
-      color: black;
-  }
+/* Carrito de compras */
+.carrito-c {
+  position: fixed;
+  right: 20px;
+  top: 20px;
+  bottom: 20px;
+  background-color: rgb(0, 0, 0);
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 0 20px rgba(204, 221, 10, 0.759);
+  overflow-y: auto;
+  z-index: 1000;
+  min-width: 350px;
+  max-width: 900px;
+  transition: width 0.1s ease;
+  cursor: default;
+  border: 2px solid #d9ab23;
+  font-family: 'Jura', sans-serif;
+}
 
-  header {
-      padding: 10px;
-      margin-left: 143px;
-    background-color: #000000;
-
-  }
-
-  #text1 {
-      height: 200px;
-      width: 750px;
-      font-family: 'Jura', sans-serif;
-      margin-left: 385px;
-      font-size: 20px;
-      margin-top: -135px;
-      transition: transform 0.3s ease, color 0.3s ease; 
-  }
-
-  #text1:hover {
-      transform: scale(1.1); 
-      color: #FFF1C6; 
-  }
-
-  
-  .modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.5); 
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 9999;
-  }
-
-  .modal-contenido {
-    background-color: rgb(36, 35, 35); 
-    background-blend-mode:saturation;
-    padding: 30px;
-    max-width: 1200px;
-    width: 1200px;
-    height: 590px;
-    overflow-y: auto;
-    text-align: center;
-  }
-
-  .botonx {
+.resize-handle {
   position: absolute;
-  top: 35px;
-  right: 180px;
+  left: -5px;
+  top: 0;
+  bottom: 0;
+  width: 10px;
+  cursor: col-resize;
+  z-index: 10;
+}
+
+.resize-handle:hover, 
+.resizing .resize-handle {
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+.resizing {
+  user-select: none;
+  -webkit-user-select: none;
+}
+.carrito-c {
+  position: fixed;
+  right: 20px;
+  top: 20px;
+  bottom: 20px;
+  background-color: rgb(0, 0, 0);
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 0 20px rgba(204, 221, 10, 0.759);
+  overflow-y: auto;
+  z-index: 1000;
+  min-width: 350px;
+  max-width: 900px;
+  transition: width 0.1s ease;
+  cursor: default;
+  border: 2px solid #d9ab23;
+  font-family: 'Jura', sans-serif;
+}
+
+.resize-handle {
+  position: absolute;
+  left: -5px;
+  top: 0;
+  bottom: 0;
+  width: 10px;
+  cursor: col-resize;
+  z-index: 10;
+}
+
+.resize-handle:hover, 
+.resizing .resize-handle {
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+.resizing {
+  user-select: none;
+  -webkit-user-select: none;
+}
+.carrito-background {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+  transition: opacity 0.3s ease;
+}
+
+.carrito-background-enter-active,
+.carrito-background-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.carrito-background-enter-from,
+.carrito-background-leave-to {
+  opacity: 0;
+}
+
+/* Contenido del carrito */
+.este {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 10px;
+}
+
+.producto-carrito {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.carta1 {
+  background-color: #d9ab23c3;
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgb(84, 80, 80);
+  width: 100%;
+  min-height: 150px;
+  margin: 10px 0;
+  display: grid;
+  grid-template-columns: 1fr 120px;
+  gap: 15px;
+  transition: background-color 0.3s ease-in-out;
+  position: relative;
+  margin-left: -15px;
+}
+
+.carta1:hover {
+  background-color: #fff;
+  color: #000000;
+}
+
+.imagen-producto {
+  width: 100%;
+  height: 120px;
+  object-fit: cover;
+  border-radius: 5px;
+  grid-column: 2;
+  grid-row: 1 / span 4;
+  align-self: center;
+}
+
+.carta1 .t {
+  margin: 5px 0;
+  font-size: 16px;
+  text-align: left;
+  grid-column: 1;
+}
+
+.cantidad-control {
+  margin: 10px 0;
+  text-align: left;
+  font-family: 'Jura', sans-serif;
+  grid-column: 1;
+}
+
+.cantidad-control label {
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.cantidad {
+  display: flex;
+  align-items: center;
+  margin-top: 5px;
+}
+
+.btn-cantidad {
+  background-color: #d9ab23;
+  border: none;
+  color: white;
+  padding: 5px 10px;
+  cursor: pointer;
+  font-size: 18px;
+  border-radius: 4px;
+}
+
+.cantidad span {
+  margin: 0 10px;
+  font-size: 18px;
+}
+
+.precio {
+  margin-top: 10px;
+  text-align: left;
+  font-family: 'Jura', sans-serif;
+  grid-column: 1;
+}
+
+.precio p {
+  margin: 5px 0;
+  font-size: 16px;
+}
+
+.eliminar {
+  position: absolute;
+  top: 5px;
+  right: 10px;
+  color: rgb(221, 20, 20);
+  cursor: pointer;
+}
+
+.eliminar:hover {
+  color: rgb(161, 6, 6);
+}
+
+.boton-comprar {
+  margin-top: 20px;
+  width: 100%;
+  padding: 12px;
+  font-size: 18px;
+}
+
+.botonx {
+  position: absolute;
+  top: 15px;
+  right: 15px;
   background: none;
   border: none;
   font-size: 20px;
   cursor: pointer;
   color: #ff0000;
+  z-index: 10000;
 }
 
 .botonx:hover {
@@ -620,521 +1160,130 @@ window.addEventListener("scroll", () => {
   background-color: #fff;
 }
 
-
-  
-  .este {
-    display: flex;
-    flex-wrap: wrap; 
-    gap: 20px;  
-  }
-
-  .producto-carrito {
-    width: calc(50% - 25px); /* Mitad del contenedor menos el margen */
-    box-sizing: border-box;
-  }
-
-  .cantidad-control {
-  margin: 10px 0;
-  text-align: left;
-  font-family: 'Jura', sans-serif;
-  }
-
-  .cantidad-control label {
-    font-size: 16px;
-    font-weight: bold;
-    font-family: 'Jura', sans-serif;
-  }
-
-  .cantidad {
-    display: flex;
-    align-items: center;
-    margin-top: 5px;
-    font-family: 'Jura', sans-serif;
-  }
-
-  .btn-cantidad {
-    background-color: #d9ab23;
-    border: none;
-    color: white;
-    padding: 5px 10px;
-    cursor: pointer;
-    font-size: 18px;
-    font-family: 'Jura', sans-serif;
-    align-items: center;
-    border-radius: 4px;
-  }
-
-  .cantidad-control span {
-    margin: 0 10px;
-    font-size: 18px;
-    font-family: 'Jura', sans-serif;
-    align-items: center;
-  }
-
-  .precio {
-    margin-top: 10px;
-    text-align: left;
-    font-family: 'Jura', sans-serif;
-    align-items: center;
-  }
-
-  .precio p {
-    margin: 5px 0;
-    font-size: 16px;
-    align-items: center;
-    font-family: 'Jura', sans-serif;
-  }
-
-
-.carta1 {
-  background-color: #d9ab23c3;
-  padding: 15px;
-  border-radius: 8px;
+.tex {
+  font-size: 18px;
+  color: #ffffff;
+  margin-bottom: 15px;
   text-align: center;
-  box-shadow: 0 4px 8px rgb(84, 80, 80);
-  width: 270px;
-  height: 370px;
-  margin-left: 130px;
-  margin-top: 40px;
+  background-color: #A65814;
+  margin-left: -5px;
+}
+
+.te {
+  font-size: 24px;
+  color: #ffe600;
+  margin-bottom: 15px;
+  text-align: center;
+}
+
+.t {
+  margin-top: -6px;
+  font-size: 18px;
+  margin-bottom: 10px;
+  font-family: 'Jura', sans-serif;
+}
+
+.mensaje-exito {
+  text-align: center;
+}
+
+.mensaje-exito h2 {
+  color: #afef7a;
+  font-size: 24px;
+  margin-bottom: 10px;
+  font-family: 'Jura', sans-serif;
+}
+
+.mensaje-exito p {
+  color: #d9ab23;
+  font-size: 16px;
+  margin-bottom: 20px;
+  font-family: 'Jura', sans-serif;
+}
+
+.eliminar {
+  color: rgb(221, 20, 20);
+  font-size: 24px;
+  cursor: pointer;
+  display: inline-block;
+  margin-top: 10px;
+}
+
+.eliminar:hover {
+  color: rgb(237, 143, 143);
+}
+
+/* Footer */
+footer {
+  padding: 20px;
+  text-align: center;
+  margin-top: 94px;
+}
+
+.wrapper {
   display: flex;
-  flex-direction: column;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
-  transition: background-color 0.3s ease-in-out;
-  list-style: none; 
-}
-.carta1:hover {
-  background-color: #fff;
-  color:#000000 
-}
-.carta1::before,
-.carta1::after {
-  content: none !important; 
+  width: 90%;
+  margin: 0 auto;
+  padding: 20px;
+  background-color: #000;
+  border-radius: 15px;
 }
 
+.wrapper .icon {
+  position: relative;
+  background: #000000;
+  border-radius: 50%;
+  margin: 10px;
+  width: 50px;
+  height: 50px;
+  font-size: 18px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
 
-  .imagen-producto {
-    width: 100%;
-    height: 120px;
-    margin-bottom: 10px;
-    object-fit: cover;
-  }
-  .eliminar {
-    color: rgb(221, 20, 20);
-    font-size: 24px;
-    cursor: pointer;
-    display: inline-block;
-    margin-top: 10px;
-  }
+.wrapper .tooltip {
+  position: absolute;
+  top: 0;
+  font-size: 14px;
+  background: #fff;
+  color: #fff;
+  padding: 5px 8px;
+  border-radius: 5px;
+  box-shadow: 0 10px 10px rgba(0, 0, 0, 0.1);
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
 
-  .eliminar:hover {
-    color: rgb(237, 143, 143);
-  }
+.wrapper .tooltip::before {
+  position: absolute;
+  content: "";
+  height: 8px;
+  width: 8px;
+  background: #fff;
+  bottom: -3px;
+  left: 50%;
+  transform: translate(-50%) rotate(45deg);
+}
 
-  .boton-comprar,
-  .boton-cerrar {
-    color: black;
-    padding: 10px 20px;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    margin-top: 230px;
-    margin: 40px;
-  }
+.wrapper .icon:hover .tooltip {
+  top: -45px;
+  opacity: 1;
+  visibility: visible;
+}
 
-  .boton-comprar {
-    background-color: #d9ab23;
-    color: #ffffff;
-  }
-
-  .boton-cerrar {
-    background-color: rgb(140, 52, 52);
-    color: #ffffff;
-  }
-
-  .mensaje-exito {
-    color: green;
-  }
-  .tex{
-    font-size: 20px;
-    color: #ffffff;
-    margin-bottom: 15px;
-    font-family: 'Jura', sans-serif;
-
-  }
-
-  .te {
-    font-size: 27px;
-    color: #ffffff;
-    margin-bottom: 15px;
-    font-family: 'Jura', sans-serif;
-  }
-
-  .t {
-    margin-top: -6px;
-    font-size: 18px;
-    margin-bottom: 10px;
-    font-family: 'Jura', sans-serif;
-  }
- 
-  .mensaje-exito {
-    text-align: center;
-  }
-
-  .mensaje-exito h2 {
-    color: #afef7a;
-    font-size: 24px;
-    margin-bottom: 10px;
-    font-family: 'Jura', sans-serif;
-  }
-
-  .mensaje-exito p {
-    color: #d9ab23;
-    font-size: 16px;
-    margin-bottom: 20px;
-    font-family: 'Jura', sans-serif;
-  }
-
-
-
-  nav {
-      margin-left: -73px;
-  }
-
-  #menu-inicial {
-      color:#D9AB23;
-      position: relative;
-      z-index: 1000;
-      padding: 15px ;
-    }
-
-    #menu-fijo {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      margin-left: -60px;
-      background-color: #000000;
-      z-index: 1000;
-      box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
-      transform: translateY(-100%); 
-      transition: transform 0.3s ease; 
-    }
-    
-    .menu-hamburguesa {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-
-    ul.menu {
-      list-style: none;
-      margin-left: 90px;
-      padding: 0;
-      display: flex;
-      gap: 15px;
-    }
-
-    ul.menu li {
-      font-size: 16px;
-      font-family: Arial, sans-serif;
-    }
-
-    ul.menu li a, ul.menu li router-link {
-      text-decoration: none;
-      color: #D9AB23;
-    }
-
-    #menu-fijo.activo {
-      transform: translateY(0); /* Muestra el menú fijo */
-    }
-
-
-
-
-  nav ul {
-      list-style: none;
-      display: flex;
-      justify-content: space-evenly;
-      margin-left: -194px;
-      margin-top: 33px;
-  }
-
-  nav li a {
-      font-family: 'Jura', sans-serif;
-      text-decoration: none;
-      color:#D9AB23;;
-      padding: 10px;
-  }
-
-  hr {
-      border-top: 2px solid #D9AB23;
-      width: 1420px;
-      margin-left: 5%;
-      margin-top: -50px;
-  }
-
-  #l2 {
-      margin-top: 20px;
-      width: 890px;
-      margin-left: 22%;
-
-  }
-
-
-  #amasijos{
-      text-align: center;
-      color:#A65814;
-      height: 200px;
-      width: 80px;
-      font-family: 'Jura', sans-serif;
-      margin-left: 740px;
-      font-size: 24px;
-      margin-top: 60px;
-      transition: transform 0.3s ease, color 0.3s ease; 
-  }
-  #bebidas-frias{
-    text-align: center;
-      color:#A65814;
-      height: 200px;
-      width: 80px;
-      font-family: 'Jura', sans-serif;
-      margin-left: 740px;
-      font-size: 24px;
-      margin-top: 60px;
-      transition: transform 0.3s ease, color 0.3s ease; 
-  }
-  #bebidas-calientes{
-    text-align: center;
-      color:#A65814;
-      height: 200px;
-      width: 80px;
-      font-family: 'Jura', sans-serif;
-      margin-left: 740px;
-      font-size: 24px;
-      margin-top: 60px;
-      transition: transform 0.3s ease, color 0.3s ease; 
-  }
-  #desayunos{
-    text-align: center;
-      color:#A65814;
-      height: 200px;
-      width: 80px;
-      font-family: 'Jura', sans-serif;
-      margin-left: 740px;
-      font-size: 20px;
-      margin-top: 60px;
-      transition: transform 0.3s ease, color 0.3s ease; 
-  }
-  #hojaldres{
-    text-align: center;
-      color:#A65814;
-      height: 200px;
-      width: 80px;
-      font-family: 'Jura', sans-serif;
-      margin-left: 740px;
-      font-size: 24px;
-      margin-top: 60px;
-      transition: transform 0.3s ease, color 0.3s ease; 
-  }
-  #malteadas{
-    text-align: center;
-      color:#A65814;
-      height: 200px;
-      width: 80px;
-      font-family: 'Jura', sans-serif;
-      margin-left: 740px;
-      font-size: 24px;
-      margin-top: 60px;
-      transition: transform 0.3s ease, color 0.3s ease; 
-  }
-  .carrito-icono {
-    margin-left: 5px;
-    font-size: 18px;
-    color: #ffffff;
-    cursor: pointer;
-  }
-
-  #l3 {
-      background-color: #D9AB23;
-      border-top: 2px solid #D9AB23;
-      width: 640px;
-      margin-left: 4%;
-      margin-top: -210px;
-      
-  }
-
-  #l1 {
-      margin-top: -11px;
-      width: 640px;
-      margin-left: 56%;
-  }
-
-
-  #cartas-contenedor {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 20px;
-    margin: 50px 4%; 
-  }
-
-  .carta {
-    background-color: #fffaf0;
-    border: 2px solid #d9ab23;
-    border-radius: 10px;
-    height: 320px;
-    padding: 20px;
-    text-align: center;
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-  }
-
-  .carta:hover {
-    transform: scale(1.05);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-  }
-
-  .carta-imagen {
-    width: 100%;
-    height: 60%;
-    border-radius: 10px;
-  }
-
-  .carta-titulo {
-    font-size: 20px;
-    color: #a65814;
-    margin-top: -5px;
-    font-family: 'Jura', sans-serif;
-  }
-
-  .carta-descripcion {
-    font-size: 16px;
-    color: #333;
-    margin-top: -5px;
-    font-family: 'Jura', sans-serif;
-  }
-  
-  .carta-descripcion1 {
-    font-size: 16px;
-    color: #333;
-    margin-top: -5px;
-    font-family: 'Jura', sans-serif;
-  }
-
-  button {
-    background-color: #D9AB23;
-    color: white;
-    padding: 10px 20px; 
-    border: none;
-    border-radius: 5px; 
-    font-size: 16px; 
-    font-family: 'Jura', sans-serif;
-    cursor: pointer; 
-    transition: background-color 0.3s ease, transform 0.2s ease; 
-  }
-
-  button:hover {
-    background-color: #A65814;
-    transform: scale(1.05); 
-  }
-
-  button:active {
-    background-color: #000000; 
-    transform: scale(0.98); 
-  }
-
-  button:disabled {
-    background-color: #b0bec5; 
-    cursor: not-allowed; 
-  }
-
-
-
-
-  footer {
-      padding: 20px;
-      text-align: center;
-      margin-top: 94px;
-  }
-
-  .wrapper {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      width: 90%;
-      margin: 0 auto;
-      padding: 20px;
-      background-color: #000;
-      border-radius: 15px;
-  }
-
-  .wrapper .icon {
-      position: relative;
-      background: #000000;
-      border-radius: 50%;
-      margin: 10px;
-      width: 50px;
-      height: 50px;
-      font-size: 18px;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      cursor: pointer;
-      transition: all 0.2s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-  }
-
-  .wrapper .tooltip {
-      position: absolute;
-      top: 0;
-      font-size: 14px;
-      background: #fff;
-      color: #fff;
-      padding: 5px 8px;
-      border-radius: 5px;
-      box-shadow: 0 10px 10px rgba(0, 0, 0, 0.1);
-      opacity: 0;
-      pointer-events: none;
-      transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-  }
-
-  .wrapper .tooltip::before {
-      position: absolute;
-      content: "";
-      height: 8px;
-      width: 8px;
-      background: #fff;
-      bottom: -3px;
-      left: 50%;
-      transform: translate(-50%) rotate(45deg);
-  }
-
-  .wrapper .icon:hover .tooltip {
-      top: -45px;
-      opacity: 1;
-      visibility: visible;
-  }
-
-  .wrapper .facebook:hover,
-  .wrapper .facebook:hover .tooltip,
-  .wrapper .facebook:hover .tooltip::before {
-      background: #1877f2;
-      color: #fff;
-  }
-
-  .wrapper .twitter:hover,
-  .wrapper .twitter:hover .tooltip,
-  .wrapper .twitter:hover .tooltip::before {
-      background: #00acee;
-      color: #fff;
-  }
-
-  .wrapper .instagram:hover,
-  .wrapper .instagram:hover .tooltip,
-  .wrapper .instagram:hover .tooltip::before {
-      background: #dd2a7b;
-      color: #fff;
-  }
-
- @media (min-width: 280px) and (max-width: 490px) {
+.wrapper .instagram:hover,
+.wrapper .instagram:hover .tooltip,
+.wrapper .instagram:hover .tooltip::before {
+  background: #dd2a7b;
+  color: #fff;
+}
+@media (min-width: 280px) and (max-width: 490px) {
     body {
         font-size: 10px; 
     }

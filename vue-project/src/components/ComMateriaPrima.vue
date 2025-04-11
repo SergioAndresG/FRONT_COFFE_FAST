@@ -261,6 +261,7 @@ cargarMateriasPrimas();
         <p>Vida Util (dias): <span class="product-quantity">{{ materiaSeleccionada.vida_util_dias }}</span></p>
         <p>Fecha vencimiento: <span class="product-price">{{ materiaSeleccionada.fecha_vencimiento }}</span></p>
         <p>Unidad de medida: <span class="product-price">{{ materiaSeleccionada.unidad_id }}</span></p>
+        <p>Precio Unitario: <span class="product-price">{{ materiaSeleccionada.precio_salida }}</span></p>
       </div>
       <button @click="closeEmergente" class="closeMore">Cerrar</button>
     </div>

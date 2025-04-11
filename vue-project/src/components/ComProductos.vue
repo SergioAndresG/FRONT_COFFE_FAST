@@ -35,7 +35,6 @@ watchEffect(() => {
   }
 })
 
-
 //funcion para boton para volver entre paginas
 const router = useRouter();
 
@@ -127,11 +126,12 @@ const productosAgotados =computed(()=>{
   return productos.value.filter(p=>p.cantidad<=umbralAgotado.value);
 });
 
-const productosProximosAgotarse=computed(()=>{
-  return productos.value.filter(
-    p=>p.stock_minimo>umbralAgotado.value&&p.stock_minimo<=umbralProximoAgotar.value
+const productosProximosAgotarse = computed(() => {
+  return productos.value.filter(producto => 
+    producto.cantidad > umbralAgotado.value && 
+    producto.cantidad <= producto.stock_minimo
   );
-})
+});
 
 const tieneLAlertas=computed(()=>{
   return productosAgotados.value.length > 0 || productosProximosAgotarse.value.length
@@ -345,9 +345,7 @@ cargarProductos();
   
   <button v-if="mostarPanelAlertas && tieneLAlertas && panelAlertasMinimizado" @click="togglePanelAlertas" class="btn-flotante-alertas"><font-awesome-icon :icon="faExclamationTriangle"/>{{ productosAgotados.length + productosProximosAgotarse.length }} Alertas 
   </button>
-  <button class="btn-cerrar" @click="cerrarPanelAlertas">
-            <font-awesome-icon :icon="faTimes" />
-          </button>
+  <button  class="btn-cerrar" @click="cerrarPanelAlertas" ></button>
   <transition-group name="fade" tag="div" class="product-container">
   <div class="card2" v-for="producto in filtrarProductos" :key="producto.id">
     <div class="product-image">
@@ -787,7 +785,8 @@ hr {
 }
 
 .alerta-proximo {
-  background-color: #fffbe6;
+  background-color: #000000;
+
 }
 .alerta-seccion h5 {
   font-family: 'Jura', sans-serif;

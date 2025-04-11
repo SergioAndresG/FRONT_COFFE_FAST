@@ -1,10 +1,14 @@
-import './assets/main.css'
 
 import { createApp } from 'vue'
 import App from './App.vue'
 import router from './routers/misrutas';
-import '@fortawesome/fontawesome-free/css/all.css'
+import './assets/main.css'; 
+import 'sweetalert2/dist/sweetalert2.min.css'; 
+import '@fortawesome/fontawesome-free/css/all.css';
 
-createApp(App)
-.use(router)
+
+
+const app = createApp(App);
+
+app.use(router)
 .mount('#app')

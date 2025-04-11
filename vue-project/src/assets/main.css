@@ -1,9 +1,7 @@
 /* main.css */
 @import url('https://fonts.googleapis.com/css2?family=Jura:wght@700&display=swap');
 
-/* src/assets/styles.css */
-
-/* Personaliza el título de las alertas */
+/* estilo de el título de las alertas */
 .swal2-title {
     font-family: 'Jura', sans-serif;
     font-size: 24px;
@@ -13,7 +11,7 @@
     margin-bottom: 10px;
   }
   
-  /* Personaliza el texto */
+  /* estilo de el texto */
   .swal2-html-container {
     font-family: 'Jura', sans-serif;
     font-size: 18px;
@@ -23,7 +21,7 @@
     z-index: 9999;
   }
   
-  /* Personaliza el botón de confirmación */
+  /* estilo de el botón de confirmación */
   .swal2-confirm {
     font-family: 'Jura', monospace;
     font-size: 16px;

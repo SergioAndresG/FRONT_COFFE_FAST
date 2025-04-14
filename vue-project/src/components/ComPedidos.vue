@@ -47,6 +47,44 @@ const actualizarHora = () => {
   })
 }
 
+interface Cliente {
+  numeroId: string;
+  nombre: string;
+}
+
+interface ProductoPedido {
+  id: number;
+  cantidad: number;
+  precio: number;
+}
+
+const crearPedido = async (cliente: Cliente, productos: ProductoPedido[]) => {
+  try {
+    const pedidoData = {
+      cliente_id: cliente.numeroId,
+      productos: productos.map(p => ({
+        producto_id: p.id,
+        cantidad: p.cantidad,
+        precio_unitario: p.precio
+      })),
+      estado: "nuevo"
+    };
+    
+    const response = await axios.post('http://localhost:8000/pedidos', pedidoData);
+    
+    if (response.data.pedido_id) {
+      // Guardar en localStorage para el panel de cliente
+      localStorage.setItem('pedido_id', response.data.pedido_id);
+      localStorage.setItem('cliente_actual', JSON.stringify(cliente));
+      
+      return response.data.pedido_id;
+    }
+  } catch (error) {
+    console.error('Error al crear pedido:', error);
+    throw error;
+  }
+}
+
 const completarPedido = async (pedido: Pedido) => {
   try {
     // Agregar validación más estricta
@@ -125,18 +163,30 @@ const manejarPedidoCompletado = (pedido: Pedido) => {
 };
 
 
+
 // Función para verificar si una fecha es de hoy
 const esDeHoy = (fechaStr: string): boolean => {
   try {
-    const fechaPedido = new Date(fechaStr)
-    const hoy = new Date()
+    const fechaPedido = new Date(fechaStr);
+    const hoy = new Date();
     
-    return fechaPedido.getDate() === hoy.getDate() &&
-           fechaPedido.getMonth() === hoy.getMonth() &&
-           fechaPedido.getFullYear() === hoy.getFullYear()
+    // Normalizar fechas a medianoche para comparar solo el día
+    const fechaPedidoNormalizada = new Date(
+      fechaPedido.getFullYear(),
+      fechaPedido.getMonth(),
+      fechaPedido.getDate()
+    );
+    
+    const hoyNormalizado = new Date(
+      hoy.getFullYear(),
+      hoy.getMonth(),
+      hoy.getDate()
+    );
+    
+    return fechaPedidoNormalizada.getTime() === hoyNormalizado.getTime();
   } catch (e) {
-    console.error('Error al parsear fecha:', e)
-    return false
+    console.error('Error al parsear fecha:', e);
+    return false;
   }
 }
 
@@ -149,12 +199,13 @@ const pedidosDeHoy = computed(() => {
 // Cargar pedidos
 const cargarPedidos = async () => {
   try {
-    cargando.value = true
+    cargando.value = true;
+    console.log('Cargando pedidos...'); // Debug
     
-    // Primero intentamos obtener pedidos desde el backend
-    const response = await axios.get('http://localhost:8000/pedidos')
+    const response = await axios.get('http://localhost:8000/pedidos');
+    console.log('Respuesta del backend:', response.data); // Debug
+    
     if (response.data && Array.isArray(response.data)) {
-      // Transformar los pedidos del backend al formato que espera nuestra app
       pedidos.value = response.data.map((p: any) => ({
         id: p.id.toString(),
         titulo: `Pedido #${p.id}`,
@@ -163,48 +214,16 @@ const cargarPedidos = async () => {
         idCliente: p.cliente_id.toString(),
         productos: p.productos || [],
         estado: p.estado || 'nuevo',
-        mensaje: p.mensaje
-      }))
-    } else {
-      // Si no hay datos del backend, intentamos cargar del localStorage
-       pedidos.value = []
+        mensaje: p.mensaje || 'Tu pedido está siendo procesado'
+      }));
+      
+      console.log('Pedidos cargados:', pedidos.value); // Debug
     }
-    
-    // Si hay un pedidoId en la URL, buscar ese pedido específico
-    if (route.query.pedidoId) {
-      const pedidoEncontrado = pedidos.value.find(p => p.id === route.query.pedidoId)
-      if (pedidoEncontrado) {
-        pedidoActual.value = pedidoEncontrado
-      } else {
-        // Si no encontramos el pedido, intentar buscarlo específicamente
-        try {
-          const pedidoResponse = await axios.get(`http://localhost:8000/pedidos/${route.query.pedidoId}`)
-          if (pedidoResponse.data) {
-            const p = pedidoResponse.data
-            pedidoActual.value = {
-              id: p.id.toString(),
-              titulo: `Pedido #${p.id}`,
-              fecha: p.fecha,
-              cliente: p.cliente_nombre || (route.query.nombre as string) || 'Cliente',
-              idCliente: p.cliente_id.toString() || (route.query.clienteId as string) || '',
-              productos: p.productos || [],
-              estado: p.estado || 'nuevo',
-              mensaje: p.mensaje || 'Tu pedido está siendo procesado'
-            }
-          }
-        } catch (err) {
-          console.error('Error al obtener pedido específico:', err)
-        }
-      }
-    }
-    
   } catch (err) {
-    console.error('Error al cargar pedidos:', err)
-    error.value = 'No se pudieron cargar los pedidos. Intente nuevamente.'
-    pedidos.value = []
-    
+    console.error('Error al cargar pedidos:', err);
+    error.value = 'No se pudieron cargar los pedidos. Intente nuevamente.';
   } finally {
-    cargando.value = false
+    cargando.value = false;
   }
 }
 
@@ -233,6 +252,8 @@ const cambiarEstadoPedido = async (id: string, nuevoEstado: 'nuevo' | 'en_proces
     error.value = 'Error al actualizar el estado del pedido. Intente nuevamente.'
   }
 }
+
+
 
 // Función para navegar a facturas
 const irAFacturas = () => {
@@ -303,6 +324,7 @@ const cargarDetallesPedido = async (pedidoId: string) => {
 }
 
 // Iniciar y limpiar el intervalo
+// En el panel de pedidos, modificar el intervalo de actualización
 onMounted(() => {
   actualizarHora()
   intervaloHora = setInterval(actualizarHora, 1000)
@@ -310,13 +332,13 @@ onMounted(() => {
   cargarPedidos()
   registrarNuevoPedido()
   
-  // Actualizar estados cada minuto
+  // Actualizar estados cada 5 segundos (más frecuente)
   const intervalActualizar = setInterval(() => {
+    cargarPedidos() // Actualizar toda la lista
     if (pedidoActual.value) {
       cargarDetallesPedido(pedidoActual.value.id)
-      cargarPedidos()
     }
-  }, 30000)
+  }, 5000) // 5 segundos
   
   onUnmounted(() => {
     clearInterval(intervaloHora)
@@ -392,20 +414,27 @@ onMounted(() => {
         <div class="pedidos-container" v-else>
           <div v-for="pedido in pedidosDeHoy" :key="pedido.id" class="pedido-completo">
             <div class="pedido-item" :class="{
-                'nuevo': pedido.estado === 'nuevo',
-                'en-proceso': pedido.estado === 'en_proceso',
-                'completado': pedido.estado === 'completado'
-              }">
+              'nuevo': pedido.estado === 'nuevo',
+              'en-proceso': pedido.estado === 'en_proceso',
+              'completado': pedido.estado === 'completado',
+              'cancelado': pedido.estado === 'cancelado'
+          }">
               <div class="pedido-icono">
-                <i class="fas fa-utensils"></i>
+                  <i class="fas" :class="{
+                      'fa-utensils': pedido.estado !== 'cancelado',
+                      'fa-times-circle': pedido.estado === 'cancelado'
+                  }"></i>
               </div>
               
               <div class="pedido-contenido">
-                <div class="pedido-header">
-                  <span class="pedido-numero">{{ pedido.titulo }}</span>
-                  <span class="pedido-cliente">{{ pedido.cliente }}</span>
-                </div>
-                
+                  <div class="pedido-header">
+                      <span class="pedido-numero">{{ pedido.titulo }}</span>
+                      <span class="pedido-cliente">{{ pedido.cliente }}</span>
+                      <span v-if="pedido.estado === 'cancelado'" class="estado-cancelado">
+                          (Cancelado)
+                      </span>
+                  </div>
+  
                 <div class="pedido-productos">
                   <div v-for="(producto, index) in pedido.productos" :key="index" class="producto-item">
                     {{ producto.nombre }} (x{{ producto.cantidad }}) - ${{ producto.precio_unitario * producto.cantidad }}
@@ -427,24 +456,23 @@ onMounted(() => {
             </div>
             
               
-            <div class="pedido-acciones-externas" >
-              
+            <div class="pedido-acciones-externas">
               <button 
-                class="btn-completado"
-                @click="manejarPedidoCompletado(pedido)"
-                :disabled="pedido.estado === 'completado'"
+                  class="btn-completado"
+                  @click="manejarPedidoCompletado(pedido)"
+                  :disabled="pedido.estado === 'completado' || pedido.estado === 'cancelado'"
               >
-                {{ pedido.estado === 'completado' ? '✓ Completado' : 'Pedido completo' }}
+                  {{ pedido.estado === 'completado' ? '✓ Completado' : 'Pedido completo' }}
               </button>
               <button 
-                class="btn-proceso"
-                @click="cambiarEstadoPedido(pedido.id, 'en_proceso')"
-                :disabled="pedido.estado !== 'nuevo'"
+                  class="btn-proceso"
+                  @click="cambiarEstadoPedido(pedido.id, 'en_proceso')"
+                  :disabled="pedido.estado !== 'nuevo' && pedido.estado !== 'en_proceso'"
               >
-                {{ pedido.estado === 'en_proceso' ? '↻ En proceso' : 'Poner en proceso' }}
+                  {{ pedido.estado === 'en_proceso' ? '↻ En proceso' : 'Poner en proceso' }}
               </button>
-            </div>
           </div>
+        </div>
         </div>
       </div>
     </div>
@@ -990,6 +1018,24 @@ ul li {
 .pedido-item.completado {
   border-left: 5px solid #2ecc71;
   opacity: 0.9;
+}
+
+.pedido-item.cancelado {
+    border-left: 5px solid #ff4444;
+    background-color: rgba(255, 0, 0, 0.05);
+}
+
+.pedido-item.cancelado .pedido-header {
+    color: #ff4444;
+}
+
+.pedido-item.cancelado .pedido-icono {
+    color: #ff4444;
+}
+
+.estado-cancelado {
+    color: #ff4444;
+    font-weight: bold;
 }
 button:disabled {
   opacity: 0.6;

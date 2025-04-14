@@ -33,7 +33,7 @@ const routes = [
         component: ComNostros
     },
     {
-        path: "/",
+        path: "/Sesion",
         name:"Sesion",
         component: ComSesion
     },

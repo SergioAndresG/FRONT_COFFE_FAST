@@ -89,7 +89,6 @@ cargarMateriasPrimas();
       <p class="product-name-label">{{ materia.nombre }}</p>
       <div class="info-details">
         <p>ID: <span class="product-id">{{ materia.id }}</span></p>
-        <p>Cantidad: <span class="product-quantity">{{ materia.cantidad}} {{ materia.unidad.simbolo }}</span></p>
         <p>Fecha Vencimiento: <span class="product-price">{{ materia.fecha_vencimiento }}</span></p>
       </div>
     </div>

@@ -190,6 +190,7 @@ const closeModal = () => {
 </template>
 
 
+
   
 
 <style scoped>
@@ -360,6 +361,85 @@ input::placeholder {
 
 .fade-enter-to, .fade-leave-from {
   opacity: 1;
+}
+@media (max-width: 767px) {
+  .modal-overlay {
+    align-items: flex-start; 
+    overflow-y: auto; 
+    padding: 20px 0; 
+  }
+
+  .titulo {
+    position: fixed;
+    top: 20px;
+    left: 40%;
+    transform: translateX(-50%);
+    font-size: 20px;
+    width: 90%;
+    z-index: 100;
+  }
+
+  .modal-content {
+    width: 90%;
+    max-width: 100%;
+    height: auto;
+    max-height: 80vh; 
+    overflow-y: auto; 
+    margin-top: 70px;
+    margin-left: -18px;
+    padding: 15px;
+    position: relative;
+  }
+
+  .form-container {
+    max-width: 90%;
+    height: auto;
+    padding: 10px;
+    margin-left: 0;
+    margin-top: 0;
+    border: none;
+  }
+
+  form {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .column {
+    width: 100%;
+  }
+
+  input, .form-container select {
+    width: 100%;
+    margin-bottom: 10px;
+  }
+
+  .agregar {
+    width: 100%;
+    margin-top: 20px;
+    margin-left: 0;
+    height: 40px;
+    position: static; 
+  }
+
+  .close-btn {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    margin: 0;
+    z-index: 101;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  h1 {
+    font-size: 20px;
+    margin: 0;
+  }
 }
 
 

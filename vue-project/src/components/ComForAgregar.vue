@@ -287,4 +287,77 @@ button:hover {
 .close-btn:hover {
   background-color: darkred;
 }
+@media (max-width: 767px) {
+  .modal-overlay {
+    align-items: flex-start; 
+    padding: 20px 0;
+    overflow-y: auto; 
+  }
+
+  .modal-content {
+    width: 87%;
+    height: auto;
+    max-height: 90vh; 
+    margin: 20px auto;
+    padding: 15px;
+    overflow-y: auto; 
+    position: relative;
+  }
+
+  .close-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    margin: 0;
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  h1 {
+    font-size: 20px;
+    margin: 10px 0 20px 0;
+    text-align: center;
+  }
+
+  .form-container {
+    width: 80%;
+    padding: 15px;
+    margin: 0;
+  }
+
+  form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  input, select {
+    width: 100%;
+    margin-bottom: 10px;
+    padding: 12px;
+    font-size: 16px;
+  }
+
+  button {
+    width: 100%;
+    margin: 20px 0 0 0;
+    padding: 12px;
+    font-size: 16px;
+  }
+
+  /* Mejorar la experiencia de scroll en iOS */
+  .modal-content {
+    -webkit-overflow-scrolling: touch;
+  }
+
+  @media (orientation: landscape) {
+    .modal-content {
+      max-height: 80vh;
+    }
+  }
+}
 </style>

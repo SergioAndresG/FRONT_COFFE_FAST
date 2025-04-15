@@ -1,120 +1,267 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, computed } from "vue";
 import axios from "axios";
+import Swal from "sweetalert2";
+import { defineEmits } from 'vue';
 
-// Form data para agregar materia prima
-const formData = ref({
-  id: null,
-  nombre: "",
-  unidadMedida: "",
-  stockActual: null,
-  precioUnitario: null,
+const emit = defineEmits(["close"]);
+
+const searchTerm = ref("")
+const isModalOpen = ref(false);
+const unidades = ref([]);
+const ActModal = ref(false);
+const materiaSeleccionada = ref<any>(null);
+const materiasPrimas = ref([]);
+
+
+// 1️.Definición de datos reactivos
+const formData = ref({ 
+  id: null,        
+  nombre: "",         
+  cantidad: null,    
+  ruta_imagen: null as File | null,     
+  stock_minimo: null,  
+  fecha_ingreso: "",   
+  vida_util_dias: null,
+  unidad_id: "",  
 });
 
-// Método para manejar el envío del formulario
-const handleSubmit = async () => {
+const camposModificados = ref({
+  id: false,        
+  nombre: false,         
+  cantidad: false,    
+  ruta_imagen: false,     
+  stock_minimo: false,  
+  fecha_ingreso: false,   
+  vida_util_dias: false,
+  unidad_id: false,  
+})
+
+
+
+// Cargar unidades de medida
+const cargarUnidades = async () => {
   try {
-    // Validar datos antes de enviarlos
-    if (
-      !formData.value.nombre ||
-      !formData.value.unidadMedida ||
-      formData.value.stockActual === null ||
-      formData.value.precioUnitario === null
-    ) {
-      alert("Por favor, complete todos los campos.");
-      return;
-    }
-
-    // Realizar la solicitud POST al backend
-    const response = await axios.put(
-      `http://localhost:8080/materia/${formData.value.id}`,
-      formData.value
-    );
-    alert("Materia Prima actualizada con éxito: " + response.data.nombre);
-
-    // Limpiar el formulario después de enviar
-    formData.value.id = null;
-    formData.value.nombre = "";
-    formData.value.unidadMedida = "";
-    formData.value.stockActual = null;
-    formData.value.precioUnitario = null;
-
-    // Cerrar el modal después de enviar
-    closeModal();
+    const response = await axios.get("http://localhost:8000/materia/unidades-medida");
+    unidades.value = response.data;
   } catch (error) {
-    console.error("Error al agregar la Materia Prima:", error);
-    alert(
-      "Hubo un problema al agregar la Materia Prima. Verifique los datos e intente nuevamente."
-    );
+    console.error("Error al obtener unidades de medida", error);
+  }
+};
+cargarUnidades();
+
+// Cargar materias primas desde la API
+const cargarMateriasPrimas = async () => {
+  try {
+    const respuesta = await axios.get("http://127.0.0.1:8000/materia");
+    materiasPrimas.value = respuesta.data;
+  } catch (error) {
+    console.error("Error al cargar materias primas:", error);
   }
 };
 
-// Emitir evento para cerrar el modal
-import { defineEmits } from "vue";
-const emit = defineEmits(["close"]);
+cargarMateriasPrimas();
+
+
+//Funcion para filtrar los productos por terminos de busqueda
+// Definimos la funcion computed para que se actualice cuando halla un cambio
+const filtrarmateria = computed(() => {
+  // Si el campo esta vacio devuelve los productos sin ningun cambgio
+  if(!searchTerm.value.trim()) return materiasPrimas.value
+  // Obtenemos el valor lo pareseamos a minisculas y le quitamos los espacio (trim())
+  const term = searchTerm.value.toLowerCase().trim()
+  // Filtramos lo prodcutos que cumplan con el termino de busqueda
+  // por cada producto tomamos su nombre, se pasa a minusculas y si incluye el termino de busqueda lo dejamos si no, lo descartamos
+  return materiasPrimas.value.filter(materia => materia.nombre.toLowerCase().includes(term))
+});
+
+
+
+const handleInputChange = async (campo: string) => {
+  camposModificados.value[campo] = true
+}
+
+const handleImageUpload = (event: Event) => {
+  const file = (event.target as HTMLInputElement).files?.[0];
+  if (file) {
+    formData.value.ruta_imagen = file;
+    camposModificados.value.ruta_imagen = true;
+  }
+};
+
+// 4.Función para enviar los datos actualizados al backend
+const handleSubmit = async () => {
+  try {
+    const camposActualizados: any = {};
+    for (const campo in camposModificados.value) {
+      if (camposModificados.value[campo]) {
+        switch(campo){
+          case "nombre":
+            camposActualizados["nombre"] = formData.value.nombre;
+            break;
+          case "cantidad":
+            camposActualizados["cantidad"] = Number((formData.value.cantidad ?? 0).toFixed(2));
+            break;
+          case "stock_minimo":
+            camposActualizados["stock_minimo"] = Number(formData.value.stock_minimo.toFixed(2));
+            break;
+          case "fecha_ingreso":
+            camposActualizados["fecha_ingreso"] = formData.value.fecha_ingreso;
+            break;
+          case "vida_util_dias":
+            camposActualizados["vida_util_dias"] = Number((formData.value.vida_util_dias ?? 0).toFixed(2));
+            break;
+          case "unidad_id":
+            camposActualizados["unidad_id"] = unidades.value.find(u => u.nombre ===  formData.value.unidad_id)?.id || null;
+            break;
+          case "ruta_imagen":
+            camposActualizados["ruta_imagen"] = formData.value.ruta_imagen;
+            break;
+          default:
+            camposActualizados[campo] = formData.value[campo];
+        }
+      }
+    }
+
+    console.log('Payload being sent:', camposActualizados);
+
+    
+    if (Object.keys(camposActualizados).length > 0) {
+    const response = await axios.patch(
+      `http://127.0.0.1:8000/materia/${formData.value.id}`, 
+      camposActualizados
+    );
+    Swal.fire({
+        icon: "success",
+        title: "Materia Prima Actualizada",
+        text: "La materia prima ha sido actualizada correctamente."
+    });
+    closeModal();
+    cargarMateriasPrimas();
+    } else {
+      Swal.fire({
+        icon: "info",
+        title: "Informacion",
+        text: "No se han realizado modificaciones."
+      });
+    }
+  } catch (error) {
+    console.error("Error al actualizar la materia prima:", error);
+    Swal.fire({
+      icon: "error",
+      title: "Error al actualizar",
+      text: error.response?.data?.detail || "Hubo un problema al actualizar la materia prima."
+    });
+  }
+};
+
+const openActModal = (materia: any) => {
+  formData.value = {
+    id: materia.id,
+    nombre: materia.nombre || "",
+    cantidad: materia.cantidad || null,
+    stock_minimo: materia.stock_minimo || null,
+    fecha_ingreso: materia.fecha_ingreso || "",
+    vida_util_dias: materia.vida_util_dias || null,
+    unidad_id: materia.unidad_id || "",
+    ruta_imagen: materia.ruta_imagen ? materia.ruta_imagen : null, 
+  };
+  
+  for (const campo in camposModificados.value) {
+      camposModificados.value[campo] = false;
+  }
+    
+  materiaSeleccionada.value = materia;
+  ActModal.value = true;
+};
+
+
+const closeActModal = () => {
+  ActModal.value = false;
+};
+
+
 const closeModal = () => {
-  emit("close");
+  emit('close');  
 };
 </script>
 
 <template>
-    <div class="modal-overlay" @click="closeModal">
-      <div class="modal-content" @click.stop>
-        <h1>Actualizar Materia Prima</h1>
+  <!--  Modal para actualizar la materia prima -->
+  <div class="modal-overlay" >
+    <div class="modal-content" @click.stop>
+      <button @click="closeModal" class="close-btn3">X</button>
+      <h1>Seleccione la materia prima a actualizar</h1>
+      <input type="text" v-model="searchTerm" placeholder="Buscar Materia Prima..." class="search-input" />
+
+      <div class="productos-grid">
+        <div v-for="materia in filtrarmateria" :key="materia.id" class="productos-card">
+          <div class="productos-imagen">
+            <img v-if="materia.ruta_imagen" :src="`http://127.0.0.1:8000/materia/${materia.ruta_imagen}`" />
+          </div>
+          <div class="productos-info">
+          <h4>{{ materia.nombre }}</h4>
+          <p v-if="materia.cantidad">Stock: {{ materia.cantidad }}</p>
+          </div>
+
+          <button @click="openActModal(materia)" class="btn-agregar-productos">Actualizar</button>
+        </div>
+      </div>
+
+      <div v-if="filtrarmateria.length === 0" class="no-results">
+        No se encontraron resultados con la búsqueda
+      </div>
+
+      <div class="modal-footer">
+        <button @click="closeModal" class="btn-finalizar">Finalizar</button>
+      </div>
+    </div>
+
+
+      <div class="modal-overlay" v-if="ActModal">
         <div class="form-container">
+          <button @click="closeActModal" class="close-btn4">X</button>
           <form @submit.prevent="handleSubmit">
-            <label for="nombre">Nombre:</label>
+          <label for="id">ID de la materia prima:</label>
             <input
               type="number"
               id="id"
               v-model="formData.id"
-              placeholder="Ingrese el ID de la Materia Prima"
-              required
+              disabled
             />
+
             <label for="nombre">Nombre:</label>
-            <input
-              type="text"
-              id="nombre"
-              v-model="formData.nombre"
-              placeholder="Ingrese el nombre de la Materia Prima"
-              required
-            />
-  
-            <label for="unidadMedida">Unidad de Medida:</label>
-            <input
-              type="text"
-              id="unidadMedida"
-              v-model="formData.unidadMedida"
-              placeholder="Ingrese la unidad de medida (kg, l, etc.)"
-              required
-            />
-  
-            <label for="stockActual">Stock Actual:</label>
-            <input
-              type="number"
-              id="stockActual"
-              v-model="formData.stockActual"
-              placeholder="Ingrese la cantidad actual en stock"
-              required
-            />
-  
-            <label for="precioUnitario">Precio Unitario:</label>
-            <input
-              type="number"
-              id="precioUnitario"
-              v-model="formData.precioUnitario"
-              placeholder="Ingrese el precio unitario"
-              required
-            />
-  
-            <button type="submit">Agregar</button>
+            <input type="text" id="nombre" v-model="formData.nombre"  placeholder="Ingrese el nombre" @input="handleInputChange('nombre')" />
+
+            <label for="cantidad">Cantidad:</label>
+            <input type="number" id="cantidad" v-model="formData.cantidad"  placeholder="Cantidad en stock" @input="handleInputChange('cantidad')" />
+
+            <label for="stock_minimo">Stock Mínimo:</label>
+            <input type="number" id="stock_minimo" v-model="formData.stock_minimo"   placeholder="Stock mínimo permitido" @input="handleInputChange('stock_minimo')"  />
+
+            <label for="fecha_ingreso">Fecha de Ingreso:</label>
+            <input type="date" id="fecha_ingreso" v-model="formData.fecha_ingreso" placeholder="Ingrese la fecha de ingreso" @input="handleInputChange('fecha_ingreso')" />
+
+            <label for="vida_util_dias">Vida Útil (días):</label>
+            <input type="number" id="vida_util_dias" v-model="formData.vida_util_dias" placeholder="Días de vida útil" @input="handleInputChange('vida_util_dias')"   />
+
+            <label for="unidad_id">Unidad ID:</label>
+            <select id="unidad_id" v-model="formData.unidad_id" placeholder="ID de la unidad" @input="handleInputChange('unidad_id')" >
+              <option v-for="unidad in unidades" :key="unidad.nombre" :value="unidad.nombre">
+                {{ unidad.nombre }} ({{ unidad.simbolo }})
+              </option>
+            </select>
+
+            <label for="imagen">Imagen:</label>
+            <input type="file" id="imagen" @change="handleImageUpload">
+
+            <button type="submit" class="act-bottom">Actualizar</button>
+
           </form>
         </div>
-      </div>
-      <button @click="closeModal" class="close-btn">X</button>
     </div>
-  </template>
-  
+  </div>
+</template>
 
 <style scoped>
 
@@ -238,6 +385,93 @@ button:hover {
 
 .close-btn:hover {
   background-color: darkred;
+}
+
+@media (max-width: 767px) {
+  .modal-overlay {
+    align-items: flex-start;
+    padding-top: 20px;
+    overflow-y: auto;
+    justify-content: flex-start;
+  }
+
+  h1 {
+    font-size: 20px;
+    margin-left: -20px;
+    text-align: center;
+    width: 100%;
+    position: fixed;
+    top: 20px;
+    left: 0;
+    z-index: 100;
+  }
+
+  .modal-content {
+    width: 90%;
+    max-width: 100%;
+    height: auto;
+    max-height: 80vh;
+    overflow-y: auto;
+    margin-top: 60px;
+    margin-left: 0;
+    padding: 15px;
+  }
+
+  .form-container {
+    max-width: 90%;
+    margin-left: 0;
+    margin-top: 0;
+    border: none;
+    padding: 10px;
+    background-color: #000000bb;
+  }
+
+  form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  label {
+    font-size: 12px;
+    text-align: left;
+    margin-bottom: 2px;
+  }
+
+  input, .form-container select {
+    width: 100%;
+    margin-bottom: 10px;
+    padding: 8px;
+    font-size: 14px;
+  }
+
+  button {
+    width: 100%;
+    margin-left: 0;
+    margin-top: 10px;
+    padding: 12px;
+    font-size: 16px;
+  }
+
+  .close-btn {
+    position: fixed;
+    top: 26px;
+    right: 15px;
+    margin: 0;
+    z-index: 101;
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: red;
+    font-weight: bold;
+  }
+
+  .close-btn:hover {
+    background-color: #ff4444;
+  }
 }
 
 

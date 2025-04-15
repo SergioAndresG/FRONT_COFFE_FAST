@@ -209,5 +209,87 @@ button:hover {
   background-color: darkred;
 }
 
+@media (max-width: 767px) {
+  .modal-overlay {
+    align-items: flex-start; 
+    padding: 20px 0;
+    overflow-y: auto;
+    justify-content: flex-start;
+  }
+
+  .modal-content {
+    width: 87%;
+    max-width: 100%;
+    height: auto;
+    max-height: 90vh; 
+    margin: 20px auto;
+    padding: 20px;
+    overflow-y: auto; 
+    position: relative;
+    margin-left: 0;
+  }
+
+  .close-btn {
+    position: fixed;
+    top: 65px;
+    right: 15px;
+    margin: 0;
+    background-color: red;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+  }
+
+  h1 {
+    font-size: 20px;
+    margin: 10px 0 20px 0;
+  }
+
+  .form-container {
+    width: 83%;
+    padding: 15px;
+    margin: 0;
+    background-color: rgba(0, 0, 0, 0.8);
+  }
+
+  form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  input {
+    width: 100%;
+    margin-bottom: 15px;
+    padding: 12px;
+    font-size: 16px;
+  }
+
+  button {
+    width: 100%;
+    margin: 15px 0 0 0;
+    padding: 12px;
+    font-size: 16px;
+  }
+
+  /* Improve scrolling on iOS */
+  .modal-content {
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Landscape orientation adjustments */
+  @media (orientation: landscape) {
+    .modal-content {
+      max-height: 80vh;
+    }
+    
+    .form-container {
+      padding: 10px;
+    }
+  }
+}
 
 </style>

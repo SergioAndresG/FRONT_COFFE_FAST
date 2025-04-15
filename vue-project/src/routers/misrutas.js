@@ -1,7 +1,4 @@
 import ComAdmi from "@/components/ComAdmi.vue";
-import ComConsulProPre from "@/components/ComConsulProPre.vue";
-import ComConsulPro from "@/components/ComConsulPro.vue";
-import ComConProN from "@/components/ComConProN.vue";
 import ComConsutUsu from "@/components/ComConsutUsu.vue";
 import ComEmpleado from "@/components/ComEmpleado.vue";
 import ComForAct from "@/components/ComForAct.vue";
@@ -11,20 +8,18 @@ import ComGest from "@/components/ComGest.vue";
 import ComGestEmpleadoPr from "@/components/ComGestEmpleadoPr.vue";
 import ComJefe from "@/components/ComJefe.vue";
 import ComMateriaPrima from "@/components/ComMateriaPrima.vue";
-import ComMateriaPrimaAd from "@/components/ComMateriaPrimaAd.vue";
-import ComMateriaPrimaEm from "@/components/ComMateriaPrimaEm.vue";
 import ComMenu from "@/components/ComMenu.vue";
 import ComNostros from "@/components/ComNostros.vue";
 import ComProductos from "@/components/ComProductos.vue";
-import ComProductosAdmin from "@/components/ComProductosAdmin.vue";
 import ComSesion from "@/components/ComSesion.vue";
 import SnowFall from "@/components/SnowFall.vue";
 import { createRouter, createWebHistory } from "vue-router";
-import ComConProC from "@/components/ComConProC.vue";
 import ActulizacionPerfil from "@/components/ActulizacionPerfil.vue";
 import ComPCliente from "@/components/ComPCliente.vue";
 import ComPedidos from "@/components/ComPedidos.vue";
-import ComPFacturas from "@/components/ComPFacturas.vue";
+import ComPfacturas from "@/components/ComPFacturas.vue";
+import ComResetPass from "@/components/ComResetPass.vue";
+import ResetPass from "@/components/ResetPass.vue";
 
 const routes = [
     {
@@ -33,7 +28,7 @@ const routes = [
         component: ComNostros
     },
     {
-        path: "/Sesion",
+        path: "/",
         name:"Sesion",
         component: ComSesion
     },
@@ -100,44 +95,9 @@ const routes = [
         component: ComGestEmpleadoPr
     },
     {
-        path: "/GPAdmi",
-        name: "GPAdmi",
-        component: ComProductosAdmin
-    },
-    {
-        path: "/GMAdmi",
-        name: "GMAdmi",
-        component: ComMateriaPrimaAd
-    },
-    {
-        path: "/GMAEmp",
-        name: "GMAEmp",
-        component: ComMateriaPrimaEm
-    }, 
-    {
         path: "/Snowl",
         name: "Snowl",
         component: SnowFall
-    },
-    {
-        path: "/ConsultarPre",
-        name: "ConsultarPre",
-        component: ComConsulProPre
-    },
-    {
-        path: "/ConsultarProid",
-        name: "ConsultarProid",
-        component: ComConsulPro
-    },
-    {
-        path: "/ConsultarProN",
-        name: "ConsultarProN",
-        component: ComConProN
-    },
-    {
-        path: "/ConsultarProC",
-        name: "ConsultarProC",
-        component: ComConProC
     },
     {
         path: "/ActualizarPerfil",
@@ -157,7 +117,22 @@ const routes = [
     {
         path: "/Facturas",
         name:"Facturas",
-        component:ComPFacturas
+        component:ComPfacturas
+    },
+    {
+        path: "/AddNewStock",
+        name:"NewStock",
+        component:ComPfacturas
+    },
+    {
+        path: "/ResetPass",
+        name:"ResetPass",
+        component:ComResetPass
+    },
+     {
+        path: "/NewPass",
+        name:"NewPass",
+        component:ResetPass
     }
 ]
 

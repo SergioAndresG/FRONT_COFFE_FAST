@@ -117,7 +117,7 @@ const validarUsuario = async () => {
         required
       />
 
-      <a href="#" class="forgot-password">¿Olvidaste la contraseña?</a>
+      <router-link to="/ResetPass" class="forgot-password">¿Olvidaste la contraseña?</router-link>
 
       <button type="submit" class="login-btn">Iniciar Sesión</button>
     </form>
@@ -277,7 +277,7 @@ footer a {
       padding: 0;
       overflow-x: hidden;
       width: 100%;
-      height: 100%;
+      height: 100%; 
   }
   .logo{
     margin-left: 50px;

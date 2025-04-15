@@ -585,6 +585,133 @@ input::placeholder {
 .close-btn:hover {
   background-color: darkred;
 }
+@media (max-width: 767px) {
+  .modal-overlay, .modal-overlay-2 {
+    align-items: flex-start;
+    padding: 20px 0;
+    overflow-y: auto;
+  }
 
+  .modal-content, .modal-content-2 {
+    position: relative;
+    width: 85%;
+    max-width: 100%;
+    height: auto;
+    max-height: 90vh;
+    margin: 20px auto;
+    left: auto;
+    border-radius: 10px;
+    padding: 15px;
+    overflow-y: auto;
+  }
+
+  /* Close buttons */
+  .close-btn3, .close-btn {
+    position: fixed;
+    top: 38px;
+    right: 15px;
+    margin: 0;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+  }
+
+  h1 {
+    font-size: 20px;
+    margin: 10px 0 20px 0;
+    text-align: center;
+  }
+
+  .search-container {
+    margin: 15px auto;
+    width: 90%;
+    margin-left: 5px;
+  }
+
+
+  .usuarios-grid {
+    grid-template-columns: 1fr;
+    gap: 15px;
+    padding: 10px;
+  }
+
+  .form-container {
+    width: 90%;
+    padding: 15px;
+    margin: 0;
+    margin-left: -9px;
+  }
+
+  form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  input, select {
+    width: 100%;
+    margin-bottom: 12px;
+    padding: 12px;
+    font-size: 16px;
+  }
+
+  /* Button styling */
+  .btn-agregar-usuarios,
+  .btn-finalizar,
+  .btn-actualizar,
+  .btn-cancelar {
+    width: 80%;
+    padding: 12px;
+    margin: 10px 0 0 0;
+    font-size: 12px;
+    margin-left: 30px;
+  }
+
+  /* Modified field indicator */
+  .campo-indicador {
+    position: relative;
+    display: block;
+    margin-top: -10px;
+    margin-bottom: 10px;
+  }
+
+  /* Button groups */
+  .botones-grupo {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  /* No results message */
+  .no-results {
+    padding: 20px;
+    text-align: center;
+  }
+
+  /* Footer */
+  .modal-footer {
+    padding: 15px 0;
+    justify-content: center;
+  }
+
+  /* iOS scroll improvement */
+  .modal-content, .modal-content-2 {
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Landscape orientation adjustments */
+  @media (orientation: landscape) {
+    .modal-content, .modal-content-2 {
+      max-height: 80vh;
+    }
+    
+    .usuarios-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+}
 
 </style>

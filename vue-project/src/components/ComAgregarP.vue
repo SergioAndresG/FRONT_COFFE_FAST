@@ -21,6 +21,7 @@ const currentIngrediente = ref(null);
 const formData = ref({
   nombre: "",
   precio: null,
+  precio_entrada: null,
   cantidad: null,
   id_empleado: 0,
   categoria: "",
@@ -193,6 +194,7 @@ const agregarIngrediente = () => {
       showConfirmButton: false
     });
   }
+
   // Cerrar modal
   closeCantidadModal();
 };
@@ -245,28 +247,32 @@ const handleSubmit = async () => {
       });
       return;
     }
-    
+
     // Crear un objeto FormData para enviar tanto los datos como la imagen
     const form = new FormData();
     form.append("nombre", formData.value.nombre);
     form.append("cantidad", formData.value.cantidad?.toString() ?? "0");
-    form.append("precio_unitario", formData.value.precio?.toString() ?? "0");
     form.append("id_usuario", formData.value.id_empleado.toString());
     form.append("categoria", formData.value.categoria);
     form.append("stock_minimo", formData.value.stockMinimo?.toString() ?? "0");
     form.append("tipo", formData.value.tipo);
 
-    // Si es tipo HECHO, enviar los ingredientes
-    if (formData.value.tipo === "HECHO") {
-       form.append("preparar_inicial", "true");
-        // Preparar lista de ingredientes en el formato que espera el backend
+
+
+    if (formData.value.tipo === "COMPRADO") {
+      form.append("precio_entrada", formData.value.precio_entrada?.toString() ?? "0");
+      form.append("precio_salida", formData.value.precio?.toString() ?? "0");
+    } else if (formData.value.tipo === "HECHO") {
+      form.append("precio_salida", formData.value.precio?.toString() ?? "0");
+      form.append("preparar_inicial", "true");
+          // Preparar lista de ingredientes en el formato que espera el backend
       const ingredientesParaEnviar = formData.value.ingredientes.map(ing => ({
         materia_prima_id: ing.id,
         cantidad_ingrediente: ing.cantidad,
         unidad_id: ing.unidad_id,
       }));
-      
-      // Convertir a string JSON
+        
+        // Convertir a string JSON
       const ingredientesJsonString = JSON.stringify(ingredientesParaEnviar);
       form.append("ingredientes", ingredientesJsonString);
     }
@@ -299,6 +305,7 @@ const handleSubmit = async () => {
     formData.value = {
       nombre: "",
       precio: null,
+      precio_entrada: null,
       cantidad: null,
       id_empleado: 0,
       categoria: "PLATO",
@@ -345,28 +352,27 @@ const closeModal = () => {
             <label for="cantidad">Cantidad:</label>
             <input type="number" id="cantidad" v-model="formData.cantidad" placeholder="Ingrese la cantidad" required />
 
-            <label for="precio">Precio Unitario:</label>
-            <input type="number" id="precio" v-model="formData.precio" placeholder="Ingrese el precio unitario" required />
+            <label for="precio">Precio de venta:</label>
+            <input type="number" id="precio" v-model="formData.precio" placeholder="Ingrese el precio para vender el producto"  required />
           </div>
 
           <div class="column">
-            <label for="nombre">Nombre de quine agrega:</label>
+            <label for="nombre">Nombre de quien agrega el producto:</label>
 
             <select
-                id="idEmpleado"
-                  v-model="formData.id_empleado"
-                  required
+              id="idEmpleado"
+                v-model="formData.id_empleado"
+                required
+              >
+                <option value="">Seleccione una categoría</option>
+                <option
+                   v-for="usuarioItem in usuario"
+                  :key="usuarioItem.id"
+                  :value="usuarioItem.id"
                 >
-                  <option value="">Seleccione una categoría</option>
-                  <option
-                    v-for="usuarioItem in usuario"
-                    :key="usuarioItem.id"
-                    :value="usuarioItem.id"
-                  >
-                    {{ usuarioItem.nombre }}
-                  </option>
-                </select>
-
+                  {{ usuarioItem.nombre }}
+                </option>
+            </select>
 
             <label for="categoria">Categoría:</label>
             <select id="categoria" v-model="formData.categoria" required>
@@ -375,11 +381,23 @@ const closeModal = () => {
                     {{ categoria }}
                 </option>
             </select>
+
             <label for="tipo">Tipo:</label>
             <select id="tipo" v-model="formData.tipo" required>
               <option value="HECHO">Hecho</option>
               <option value="COMPRADO">Comprado</option>
             </select>
+
+            <!-- Mostrar input de precio de entrada si es COMPRADO -->
+            <label v-if="formData.tipo === 'COMPRADO'" for="precioEntrada">Precio de Entrada:</label>
+            <input 
+              v-if="formData.tipo === 'COMPRADO'" 
+              type="number" 
+              id="precioEntrada" 
+              v-model="formData.precio_entrada" 
+              placeholder="Ingrese el precio de entrada" 
+              required 
+            />
            <transition class="fade-expand">
                 <div v-if="formData.tipo === 'HECHO'" class="ingredientes-button-container">
                    <button type="button" @click="openIngredientesModal" class="btn-agregar-receta">
@@ -390,12 +408,12 @@ const closeModal = () => {
                   </span>
                 </div>
             </transition>
+
             
             <label for="stockMinimo">Stock Mínimo:</label>
             <input type="number" id="stockMinimo" v-model="formData.stockMinimo" placeholder="Ingrese el stock mínimo" required />
 
             <label for="imagen">Agregar imagen:</label>
-            
             <input type="file" id="imagen" @change="handleImageUpload">
           </div>
 
@@ -444,6 +462,7 @@ const closeModal = () => {
                       </td>
                       <td>{{ ing.cantidad }}</td>
                       <td>{{ ing.unidad }}</td>
+                      <td>{{ }}</td>
 
                       <td>
                         <button @click="openCantidadModal(ing)" class="btn-edit">Editar</button>
@@ -457,11 +476,11 @@ const closeModal = () => {
               <div class="ingredientes-grid">
                 <div v-for="ingrediente in filteredIngredientes" :key="ingrediente.id" class="ingrediente-card">
                   <div class="ingrediente-imagen">
-                    <img v-if="ingrediente.ruta_imagen" :src="`http://127.0.0.1:8000/productos/${ingrediente.ruta_imagen}`" />
+                    <img v-if="ingrediente.ruta_imagen" :src="`http://127.0.0.1:8000/materia/${ingrediente.ruta_imagen}`" />
                   </div>
                   <div class="ingrediente-info">
                     <h4>{{ ingrediente.nombre }}</h4>
-                    <p v-if="ingrediente.cantidad">Stock: {{ ingrediente.cantidad }} {{ ingrediente.unidad.simbolo }}</p>
+                    <p v-if="ingrediente.cantidad">Stock: {{ ingrediente.cantidad }} {{ ingrediente.unidad_id.simbolo }}</p>
                   </div>
                   <button 
                     @click="openCantidadModal(ingrediente)" 
@@ -1035,5 +1054,157 @@ select {
 }
 .unidad{
   margin-left: 65px;
+}
+
+@media (max-width: 767px) {
+  .modal-overlay {
+    align-items: flex-start;
+    padding: 20px 0;
+    overflow-y: auto;
+  }
+
+  .modal-content {
+    width: 100%;
+    height: auto;
+    max-height: 90vh;
+    overflow-y: auto;
+    padding: 20px;
+    margin: 0;
+  }
+
+  .close-btn {
+    position: fixed;
+    top: 15px;
+    right: 15px;
+    margin: 0;
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  h1 {
+    font-size: 20px;
+    margin-top: 0;
+    margin-bottom: 20px;
+    margin-left: -100px;
+  }
+
+  .form-container {
+    width: 94%;
+    height: auto;
+    padding: 15px;
+    margin-left: -10px;
+    flex-direction: column;
+  }
+
+  form {
+    flex-direction: column;
+    gap: 15px;
+    width: 96%;
+  }
+
+  .column {
+    width: 100%;
+  }
+
+  input, select {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .agregar {
+    width: 100%;
+    margin: 20px 0 0 0;
+    height: 40px;
+  }
+
+  .ingredientes-modal {
+    width: 95%;
+    left: 2.5%;
+    height: 90vh;
+    top: 5vh;
+    border-radius: 8px;
+  }
+
+  .close-btn3 {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    margin: 0;
+    width: 30px;
+    height: 30px;
+    padding: 0;
+  }
+
+  .ingredientes-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .cantidad-modal-overlay {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+  }
+
+  .cantidad-modal {
+    width: 90%;
+    margin: 0;
+  }
+
+  .cantidad-form {
+    padding: 10px;
+  }
+
+  .btn-agregar-receta {
+    width: 100%;
+    margin-left: 0;
+    margin-bottom: 10px;
+  }
+
+  .added-ingredients table {
+    display: block;
+    overflow-x: auto;
+  }
+
+  /* Animaciones ajustadas para mobile */
+  .fade2-enter-active, .fade2-leave-active {
+    transition: opacity 0.3s ease;
+  }
+
+  .fade2-enter-from, .fade2-leave-to {
+    opacity: 0;
+    transform: none;
+  }
+
+  /* Ajustes para elementos específicos */
+  .btn-finalizar, .btn-cancelar, .btn-confirmar {
+    padding: 8px 12px;
+    font-size: 14px;
+  }
+
+  /* Asegurar que los modales internos sean scrollables */
+  .ingredientes-modal, .cantidad-modal {
+    overflow-y: auto;
+    max-height: 90vh;
+  }
+
+  /* Ajustar el padding en dispositivos pequeños */
+  .modal-header, .modal-footer {
+    padding: 10px;
+  }
+
+  /* Mejorar la visualización de los ingredientes */
+  .ingrediente-card {
+    margin-bottom: 10px;
+  }
+
+  /* Ajustar el tamaño de los botones de acción */
+  .btn-edit, .btn-delete {
+    padding: 5px 8px;
+    font-size: 12px;
+  }
 }
 </style>

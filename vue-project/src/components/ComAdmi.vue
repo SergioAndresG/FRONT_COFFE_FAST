@@ -271,7 +271,7 @@ hr {
   margin-left: 32%;
   border-radius: 5px;
   border: 1px solid #D9AB23; 
-  margin-top: -80px;
+  margin-top: 80px;
 }
 .nosotros-banner {
   width: 100%;
@@ -530,7 +530,7 @@ footer {
   }
 
   #c{
-    margin-left: 10px;
+    margin-left: 15px;
     width: 80%;
     height: 100%;
     margin-top: 2rem;

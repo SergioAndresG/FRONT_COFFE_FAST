@@ -348,128 +348,121 @@ footer a {
   font-family: 'Jura', sans-serif;
 }
 
-@media screen and (min-width: 280px) and (max-width: 490px) {
-    .menu-hamburguesa {
-    position: fixed;
-    top: 50px;
-    right: 20px;
-    z-index: 1000; /* Esto me asegura que el menu este encima del resto del contenido */
-    }
-
-    .menu-icon {
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      width: 40px;
-      height: 30px;
-      cursor: pointer;
-    }
-
-    .menu-icon span {
-      display: block;
-      height: 4px;
-      background-color: #BF8B8F;
-      margin-bottom: 5px;
-    }
-
-    #menu-toggle {
-      display: none;
-    }
-
-    .menu {
-      position: fixed;
-      top: 5;
-      right: -250px; 
-      height: 90vh;
-      width: 170px;
-      background-color: #fff;
-      list-style: none;
-      padding: 50px 20px;
-      box-shadow: -2px 0px 5px rgba(239, 179, 179, 0.716);
-      transition: right 0.3s ease-in-out;
-    }
-
-    .menu li {
-      margin: 20px 0;
-    }
-
-    .menu li a, .menu li router-link {
-      text-decoration: none;
-      color: #333;
-    }
-
-    #menu-toggle:checked + .menu-icon + .menu {
-      right: 0; /*Este mueve el menu dentro de la pantalla */
-    }
-
-    #menu-toggle:checked + .menu-icon span:nth-child(1) {
-      transform: rotate(45deg);
-      position: relative;
-      top: 12px;
-    }
-
-    #menu-toggle:checked + .menu-icon span:nth-child(2) {
-      opacity: 0;
-    }
-
-    #menu-toggle:checked + .menu-icon span:nth-child(3) {
-      transform: rotate(-45deg);
-      position: relative;
-      top: -8px;
-    }
-    nav ul {
-      flex-direction: column;
-      margin-left: 0;
-      margin-top: 10px;
-    }
-
-    nav li {
-      margin-bottom: 10px;
-    }
-
-    #l2, hr {
-      width: 100%;
-      margin-left: 0;
-      margin-top: 30px;
-    }
-
-
-    .progress-container {
-      margin-left: 0;
-      width: 100%;
-      margin-top: 60px;
-    }
-
-    .sidebar {
-    width: 200px;
-    background-color: #f2d2d0;
-    padding: 20px;
-    border-radius: 10px;
-    margin-left: 10px;
-    }
-    .employee-actions button {
-    align-items: center;
-    }
-    footer {
-      padding: 10px;
-      font-size: 12px;
-    }
-
-    .wrapper {
-      height: auto;
-      padding-top: 20px;
-    }
-
-    .wrapper .icon {
-      width: 40px;
-      height: 40px;
-      font-size: 16px;
-    }
-
-    .wrapper .tooltip {
-      font-size: 12px;
-      padding: 3px 5px;
-    }
- 
+@media (max-width: 767px) {
+  header {
+    padding: 5px;
   }
+
+  .container-buttom-come-back {
+    margin-top: 10px;
+    margin-left: 5%;
+    padding: 10px;
+  }
+
+  .btn-come-back {
+    width: 100px;
+    height: 30px;
+    font-size: 12px;
+  }
+
+  hr, #l2 {
+    width: 90%;
+    margin-left: 5%;
+    margin-top: 10px;
+  }
+
+  h1 {
+    font-size: 20px;
+    margin-top: 10px;
+  }
+
+  .button-container {
+    flex-direction: column;
+    align-items: center;
+    margin-top: 20px;
+    gap: 10px;
+  }
+
+  #A {
+    width: 80%;
+    padding: 12px;
+  }
+
+  .search-bar {
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+  }
+
+  .search-input {
+    width: 80%;
+    margin-left: 0;
+    margin-top: 0;
+  }
+
+  .search-icon {
+    display: none;
+  }
+
+  .empleado-container {
+    width: 90%;
+    margin-left: 5px;
+    margin-top: 30px;
+    grid-template-columns: 1fr;
+    padding: 10px;
+    gap: 20px;
+  }
+
+  .card2 {
+    width: 90%;
+    margin: 0 auto;
+    height: auto;
+    padding: 15px;
+  }
+
+  .empleado-image {
+    width: 100%;
+    height: 180px;
+    margin-left: 0;
+  }
+
+  .empleado-info {
+    flex-direction: column;
+    margin-left: 0;
+  }
+
+  .info-left, .info-right {
+    width: 100%;
+  }
+
+  .info-left p, .info-right p {
+    margin: 10px 0;
+  }
+
+  /* Footer */
+  footer {
+    margin-top: 20px;
+    padding: 15px;
+  }
+
+  /* Transiciones */
+  .fade-enter-active, .fade-leave-active {
+    transition: opacity 0.3s ease;
+  }
+
+  .fade-enter-from, .fade-leave-to {
+    opacity: 0;
+  }
+  .modal-overlay {
+    align-items: flex-start;
+    padding-top: 20px;
+  }
+
+  .modal-content {
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+}
+
   </style>

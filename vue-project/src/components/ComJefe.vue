@@ -513,6 +513,10 @@ footer {
   .buttom-container {
     display: none; /* Ocultamos el botón de perfil ya que ahora está en el menú */
   }
+  .alert-config-button {
+    height: 50px;
+    width: 120px;
+}
   .logo{
     margin-left: -23%;
     margin-top: 15%;

@@ -4,10 +4,16 @@ import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import axios from 'axios'
 import Swal from 'sweetalert2';
+import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
+import { faArrowLeft } from '@fortawesome/free-solid-svg-icons';
 
 
 const router = useRouter()
 const route = useRoute()
+
+const volver = () => {
+  router.go(-1)
+}
 
 const horaActual = ref('')
 let intervaloHora: ReturnType<typeof setInterval>
@@ -24,10 +30,21 @@ interface Pedido {
   titulo: string
   fecha: string
   cliente: string
-  idCliente: string
+  idCliente: number
   productos: Array<Producto>
   estado: 'nuevo' | 'en_proceso' | 'completado' | 'cancelado'
   mensaje?: string
+}
+
+interface Cliente {
+  numeroId: string;
+  nombre: string;
+}
+
+interface ProductoPedido {
+  id: number;
+  cantidad: number;
+  precio: number;
 }
 
 // Refs para la aplicación
@@ -45,17 +62,6 @@ const actualizarHora = () => {
     second: '2-digit',
     hour12: false
   })
-}
-
-interface Cliente {
-  numeroId: string;
-  nombre: string;
-}
-
-interface ProductoPedido {
-  id: number;
-  cantidad: number;
-  precio: number;
 }
 
 const crearPedido = async (cliente: Cliente, productos: ProductoPedido[]) => {
@@ -87,6 +93,16 @@ const crearPedido = async (cliente: Cliente, productos: ProductoPedido[]) => {
 
 const completarPedido = async (pedido: Pedido) => {
   try {
+
+    Swal.fire({
+      title: "Procesando",
+      text: "Procesando tu pedido...",
+      allowOutsideClick: false,
+      didOpen: () => {
+        Swal.showLoading();
+      }
+    });
+
     // Agregar validación más estricta
     const productosCantidad: Record<string, number> = {};
     
@@ -108,11 +124,20 @@ const completarPedido = async (pedido: Pedido) => {
       });
       return;
     }
-    
-    console.log("Enviando al servidor:", productosCantidad);
-    
-    // Enviar la compra al backend
-    const response = await axios.post("http://localhost:8000/comprar", productosCantidad, {
+
+    if (!pedido.id) {
+      Swal.fire({
+        icon: "error",
+        title: "Error al completar pedido",
+        text: "ID de pedido no válido",
+      });
+      return;
+    }
+
+    console.log("Actualizando inventario:", productosCantidad);
+    await axios.post("http://localhost:8000/comprar", {
+      productos: productosCantidad
+    }, {
       headers: {
         "Content-Type": "application/json"
       }
@@ -127,20 +152,19 @@ const completarPedido = async (pedido: Pedido) => {
       return;
     }
     
-    // Llamar al endpoint para completar el pedido y generar factura
+    // PASO 2: Generar factura con el endpoint /pedidos/{id}/completar
+    console.log("Generando factura para pedido:", pedido.id);
     const responseFactura = await axios.put(`http://localhost:8000/pedidos/${pedido.id}/completar`, {}, {
       headers: {
         "Content-Type": "application/json"
       }
     });
-    console.log("Pedido completado con factura:", response.data);
-    console.log("Compra realizada:", response.data);
     
     // Mostrar mensaje de éxito
     Swal.fire({
       icon: "success",
-      title: "Compra procesada",
-      text: `Factura #${response.data.factura_id} por $${response.data.precio_total.toFixed(2)}`,
+      title: "Pedido completado",
+      text: `Factura #${responseFactura.data.factura_id} por $${responseFactura.data.precio_total.toFixed(2)}`,
     });
  
   } catch (error) {
@@ -163,49 +187,71 @@ const manejarPedidoCompletado = (pedido: Pedido) => {
 };
 
 
-
-// Función para verificar si una fecha es de hoy
-const esDeHoy = (fechaStr: string): boolean => {
+const esDeHoy = (fechaStr) => {
+  if (!fechaStr) return true;
+  
   try {
+    // Convertir ambas fechas a UTC para comparar solo las partes de fecha
     const fechaPedido = new Date(fechaStr);
     const hoy = new Date();
     
-    // Normalizar fechas a medianoche para comparar solo el día
-    const fechaPedidoNormalizada = new Date(
-      fechaPedido.getFullYear(),
-      fechaPedido.getMonth(),
-      fechaPedido.getDate()
-    );
+    // Normalizar ambas fechas a UTC
+    const pedidoUTC = new Date(Date.UTC(
+      fechaPedido.getUTCFullYear(),
+      fechaPedido.getUTCMonth(),
+      fechaPedido.getUTCDate()
+    ));
     
-    const hoyNormalizado = new Date(
-      hoy.getFullYear(),
-      hoy.getMonth(),
-      hoy.getDate()
-    );
+    const hoyUTC = new Date(Date.UTC(
+      hoy.getUTCFullYear(),
+      hoy.getUTCMonth(),
+      hoy.getUTCDate()
+    ));
     
-    return fechaPedidoNormalizada.getTime() === hoyNormalizado.getTime();
+    // Calcular la diferencia en días
+    const diffDias = Math.floor((pedidoUTC.getTime() - hoyUTC.getTime()) / (1000 * 60 * 60 * 24));
+    
+    // Permitir pedidos de hoy y de mañana (con lógica flexible)
+    return diffDias >= -1 && diffDias <= 1;
   } catch (e) {
     console.error('Error al parsear fecha:', e);
-    return false;
+    return true; // En caso de error, mostrar el pedido
   }
 }
 
 // Computed property para filtrar pedidos del día actual
 const pedidosDeHoy = computed(() => {
-  return pedidos.value.filter(pedido => esDeHoy(pedido.fecha))
+  // Añadir debug para ver qué pedidos están siendo filtrados
+  const filtrados = pedidos.value.filter(pedido => {
+    const esDehoy = esDeHoy(pedido.fecha);
+    if (!esDehoy) {
+      console.log('Pedido filtrado (no es de hoy):', {
+        id: pedido.id, 
+        fecha: pedido.fecha, 
+        estado: pedido.estado
+      });
+    }
+    return esDehoy;
+  });
+  
+  // Mostrar información del filtrado
+  console.log(`Pedidos totales: ${pedidos.value.length}, Pedidos de hoy: ${filtrados.length}`);
+  console.log('Estados de los pedidos de hoy:', filtrados.map(p => p.estado));
+  
+  return filtrados;
 })
+
 
 
 // Cargar pedidos
 const cargarPedidos = async () => {
   try {
-    cargando.value = true;
-    console.log('Cargando pedidos...'); // Debug
+    cargando.value = true
     
-    const response = await axios.get('http://localhost:8000/pedidos');
-    console.log('Respuesta del backend:', response.data); // Debug
-    
+    // Primero intentamos obtener pedidos desde el backend
+    const response = await axios.get('http://localhost:8000/pedidos')
     if (response.data && Array.isArray(response.data)) {
+      // Transformar los pedidos del backend al formato que espera nuestra app
       pedidos.value = response.data.map((p: any) => ({
         id: p.id.toString(),
         titulo: `Pedido #${p.id}`,
@@ -214,16 +260,48 @@ const cargarPedidos = async () => {
         idCliente: p.cliente_id.toString(),
         productos: p.productos || [],
         estado: p.estado || 'nuevo',
-        mensaje: p.mensaje || 'Tu pedido está siendo procesado'
-      }));
-      
-      console.log('Pedidos cargados:', pedidos.value); // Debug
+        mensaje: p.mensaje
+      }))
+    } else {
+      // Si no hay datos del backend, intentamos cargar del localStorage
+       pedidos.value = []
     }
+    
+    // Si hay un pedidoId en la URL, buscar ese pedido específico
+    if (route.query.pedidoId) {
+      const pedidoEncontrado = pedidos.value.find(p => p.id === route.query.pedidoId)
+      if (pedidoEncontrado) {
+        pedidoActual.value = pedidoEncontrado
+      } else {
+        // Si no encontramos el pedido, intentar buscarlo específicamente
+        try {
+          const pedidoResponse = await axios.get(`http://localhost:8000/pedidos/${route.query.pedidoId}`)
+          if (pedidoResponse.data) {
+            const p = pedidoResponse.data
+            pedidoActual.value = {
+              id: p.id.toString(),
+              titulo: `Pedido #${p.id}`,
+              fecha: p.fecha,
+              cliente: p.cliente_nombre || (route.query.nombre as string) || 'Cliente',
+              idCliente: p.cliente_id.toString() || (route.query.clienteId as string) || '',
+              productos: p.productos || [],
+              estado: p.estado || 'nuevo',
+              mensaje: p.mensaje || 'Tu pedido está siendo procesado'
+            }
+          }
+        } catch (err) {
+          console.error('Error al obtener pedido específico:', err)
+        }
+      }
+    }
+    
   } catch (err) {
-    console.error('Error al cargar pedidos:', err);
-    error.value = 'No se pudieron cargar los pedidos. Intente nuevamente.';
+    console.error('Error al cargar pedidos:', err)
+    error.value = 'No se pudieron cargar los pedidos. Intente nuevamente.'
+    pedidos.value = []
+    
   } finally {
-    cargando.value = false;
+    cargando.value = false
   }
 }
 
@@ -252,8 +330,6 @@ const cambiarEstadoPedido = async (id: string, nuevoEstado: 'nuevo' | 'en_proces
     error.value = 'Error al actualizar el estado del pedido. Intente nuevamente.'
   }
 }
-
-
 
 // Función para navegar a facturas
 const irAFacturas = () => {
@@ -344,8 +420,7 @@ onMounted(() => {
     clearInterval(intervaloHora)
     clearInterval(intervalActualizar)
   })
-})
-
+});
 
 </script>
 
@@ -354,7 +429,7 @@ onMounted(() => {
     <nav>
       <ComImagen/>
       <ul>
-        <li class="l"><router-link to="/Sesion">Empleados</router-link></li>
+        <div class="container-buttom-come-back"><button @click="volver" class="btn-come-back"><font-awesome-icon :icon="faArrowLeft" class="arrow-back"/>Regresar</button></div>
       </ul>
     </nav>
   </header>
@@ -427,17 +502,17 @@ onMounted(() => {
               </div>
               
               <div class="pedido-contenido">
-                  <div class="pedido-header">
+                <div class="pedido-header">
                       <span class="pedido-numero">{{ pedido.titulo }}</span>
                       <span class="pedido-cliente">{{ pedido.cliente }}</span>
                       <span v-if="pedido.estado === 'cancelado'" class="estado-cancelado">
                           (Cancelado)
                       </span>
                   </div>
-  
-                <div class="pedido-productos">
+                
+                <div class="pedido-productos" >
                   <div v-for="(producto, index) in pedido.productos" :key="index" class="producto-item">
-                    {{ producto.nombre }} (x{{ producto.cantidad }}) - ${{ producto.precio_unitario * producto.cantidad }}
+                     (x{{ producto.cantidad }}) - ${{ producto.precio_unitario * producto.cantidad }} {{ producto.nombre }}
                   </div>
                 </div>
                 
@@ -452,7 +527,7 @@ onMounted(() => {
                     }}</strong>
                   </div>
                 </div>
-              </div>
+              </div> 
             </div>
             
               
@@ -472,7 +547,7 @@ onMounted(() => {
                   {{ pedido.estado === 'en_proceso' ? '↻ En proceso' : 'Poner en proceso' }}
               </button>
           </div>
-        </div>
+          </div>
         </div>
       </div>
     </div>
@@ -483,6 +558,34 @@ onMounted(() => {
 <style scoped>
 @import url('https://fonts.googleapis.com/css2?family=Jura:wght@700&display=swap');
 @import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css');
+
+.btn-come-back{
+  width: 120px;
+  height: 30px;
+  border: none;
+  border-radius: 10px;
+  background-color: #faad14;
+  font-family: 'Jura', sans-serif;
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  padding: 7px;
+  transition: all 0.2s ease-in-out;
+}
+.btn-come-back:hover{
+  background-color: #A65814;
+  transform: scale(1.05);
+  cursor:pointer;
+}
+.container-buttom-come-back{
+  margin-top: -83px;
+  margin-left: 10%;
+  padding: 23px;
+}
+.arrow-back{
+  margin-top: 1px;
+}
+  
 
 body {
     font-family: 'Jura', sans-serif;
@@ -1040,5 +1143,140 @@ ul li {
 button:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+@media (max-width: 767px) {
+
+  
+.btn-come-back{
+  width: 100px;
+  height: 30px;
+  gap: 10px;
+  margin-left: -24px;
+  margin-top: 40px;
+
+}
+  header {
+    padding: 10px;
+  }
+
+  nav {
+    flex-direction: column;
+    align-items: center;
+    margin-left: 100px;
+    padding: 10px 0;
+  }
+
+  nav ul {
+    margin: 20px 0 0 0;
+    justify-content: center;
+    width: 100%;
+  }
+
+  .header-pedidos {
+    width: 93%;
+    margin-left: 0;
+    padding: 10px;
+  }
+
+  .titulo-container {
+    flex-direction: column;
+    align-items: center;
+    padding: 10px;
+  }
+
+  .titulo-izquierda {
+    font-size: 1.5rem;
+    margin-left: 0;
+    margin-bottom: 10px;
+  }
+
+  .titulo-derecha {
+    margin-left: 0;
+    font-size: 1rem;
+    justify-content: center;
+  }
+
+  .stats-container {
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    margin-left: 0;
+    padding: 0 10px;
+  }
+
+  .facturas-card,
+  .orders-count-card,
+  .time-card {
+    width: 80%;
+    max-width: 300px;
+    margin: 0 auto;
+  }
+
+  .pedidos-container {
+    margin-left: 10px;
+    min-width: auto;
+    width: 80%;
+    padding: 0 10px;
+  
+  }
+
+  .pedido-completo {
+    flex-direction: column;
+  }
+
+  .pedido-item {
+    width: 100%;
+
+  }
+
+  .pedido-acciones-externas {
+    flex-direction: row;
+    margin: 10px 0;
+    padding: 0;
+    width: 100%;
+    justify-content: space-between;
+    margin-left: 20px;
+  }
+
+  .btn-completado,
+  .btn-proceso {
+    width: 48%;
+    padding: 8px 5px;
+    font-size: 0.8rem;
+  }
+
+  .pedido-productos {
+    grid-template-columns: 1fr;
+    margin-left: -70px;
+    background-color: transparent;
+    width: 260px;
+  }
+
+  .pedido-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 5px;
+    margin-top: 40px;
+    margin-left: -70px;
+  }
+
+  .pedido-footer {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 5px;
+    width: 100%;
+  }
+
+  .fecha-pedido,
+  .total-pedido {
+    font-size: 1rem;
+  }
+
+  .pedido-icono {
+    margin-top: 0;
+    padding: 8px;
+    font-size: 1.2rem;
+  }
 }
 </style>

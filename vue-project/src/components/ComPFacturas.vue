@@ -57,7 +57,7 @@ export default {
 
     async fetchFacturasClientes() {
       try {
-        const response = await axios.get("http://localhost:8000/api/facturas/");
+        const response = await axios.get("http://localhost:8000/facturas/");
         
         if (response.data && response.data.data) {
           this.facturasClientes = response.data.data.map(factura => ({
@@ -66,7 +66,6 @@ export default {
             cliente: factura.cliente?.nombre || 'Cliente no especificado',
             idCliente: factura.cliente?.id || 'N/A',
             total: `$${(factura.precio_total || 0).toFixed(2)}`,
-            estadoPedido: factura.estado || factura.pedido?.estado || 'sin estado',
             productos: Array.isArray(factura.productos) ? factura.productos.map(p => ({
               nombre: p.nombre || 'Producto sin nombre',
               cantidad: p.cantidad || 0,
@@ -208,6 +207,8 @@ export default {
     </div>
   </header>
 </template>
+
+
 
 
 <style scoped>
@@ -480,6 +481,151 @@ hr {
   transform: scale(1.2);
 }
 
+@media (max-width: 767px) {
+  header {
+    padding: 10px;
+    align-items: center;
+  }
+
+  .imagen {
+    height: 80px;
+    width: 120px;
+    margin-top: 10px;
+    margin-left: 5px;
+  }
+
+  hr, .linea2 {
+    width: 95%;
+    margin: 10px auto;
+  }
+
+  .titulo {
+    font-size: 24px;
+    margin-top: 5px;
+  }
+
+  .menu-container {
+    position: static;
+    width: 100%;
+    flex-direction: column;
+    margin-top: 20px;
+
+  }
+
+  .menu-amarillo {
+    width: 92%;
+    border-radius: 35px 35px 0 0;
+    border-right: 2px solid #f5f5f5;
+    height: auto;
+    padding: 10px;
+  }
+
+  .menu-amarillo li {
+    font-size: 16px;
+    margin-top: 10px;
+    padding: 8px 0;
+    justify-content: center;
+  }
+
+  .panel-negro {
+    position: static;
+    width: 89%;
+    border-radius: 0 0 35px 35px;
+    border-left: 2px solid #ffffff;
+    height: auto;
+    max-height: none;
+    margin-bottom: 20px;
+  }
+
+  /* Animation container */
+  .lottie-animation {
+    width: 150px;
+    height: 150px;
+    margin: 0 auto;
+  }
+
+  /* Table responsive adjustments */
+  .facturas-table {
+    overflow-x: auto;
+    display: block;
+  }
+
+  .table-header, .table-row {
+    grid-template-columns: repeat(5, minmax(100px, 1fr));
+    min-width: 600px;
+  }
+
+  /* Form elements */
+  .form-group {
+    margin-bottom: 15px;
+  }
+
+  .form-group input {
+    width: 100%;
+  }
+
+  /* Action buttons */
+  .action-buttons {
+    flex-direction: column;
+    margin-top: 20px;
+  }
+
+  .btn {
+    width: 100%;
+    margin: 10px 0 0 0;
+    justify-content: center;
+    height: auto;
+    padding: 12px;
+  }
+
+  /* Date search */
+  .form-group > div {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .buscar-btn {
+    width: 100%;
+    padding: 10px;
+  }
+
+  /* Error message */
+  .mensaje-error {
+    text-align: center;
+  }
+
+  /* Specific mobile optimizations */
+  .panel-content {
+    padding: 10px;
+  }
+
+  .panel-negro h3 {
+    font-size: 20px;
+    padding-bottom: 8px;
+    margin-bottom: 15px;
+  }
+
+  /* Landscape orientation adjustments */
+  @media (orientation: landscape) {
+    .menu-container {
+      flex-direction: row;
+    }
+    
+    .menu-amarillo {
+      width: 40%;
+      border-radius: 35px 0 0 35px;
+    }
+    
+    .panel-negro {
+      width: 60%;
+      border-radius: 0 35px 35px 0;
+    }
+    
+    .table-header, .table-row {
+      grid-template-columns: repeat(5, minmax(80px, 1fr));
+    }
+  }
+}
 
 
 </style>

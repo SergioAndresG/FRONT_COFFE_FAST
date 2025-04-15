@@ -34,7 +34,7 @@ const obtenerProductos = async () => {
     productos.value = response.data.map((p: any) => ({
       id: p.id,
       nombre: p.nombre,
-      precio: p.precio_unitario, 
+      precio: p.precio_salida, 
       ruta_imagen: p.ruta_imagen,
       categoria: p.categoria,
       cantidad: 1
@@ -184,7 +184,7 @@ const finalizarCompra = async (clienteData) => {
     const productosParaEnviar = carrito.value.map(producto => ({
         producto_id: producto.id,
         cantidad: producto.cantidad,
-        precio_unitario: producto.precio
+        precio_salida: producto.precio
     }));
 
     const pedidoData = {
@@ -1283,359 +1283,162 @@ footer {
   background: #dd2a7b;
   color: #fff;
 }
-@media (min-width: 280px) and (max-width: 490px) {
-    body {
-        font-size: 10px; 
-    }
 
-    header {
-        padding: 5px;
-        margin-left: 10px;
-    }
-
-    #text1 {
-        width: 50%;
-        font-size: 11px;
-        margin-left: 0;
-        margin-top: -90px;
-    }
-
-    nav {
-        margin-left: 0;
-    }
-
-    hr {
-        width: 380px;
-        margin-left: 4%;
-        margin-top: -80px;
-    }
-
-    #l2 {
-        margin-top: 20px;
-        width: 230px;
-        margin-left: 20%;
-    }
-
-    #menu-inicial {
-        padding: 2px;
-        margin-left: 40px;
-    }
-
-    #menu-fijo {
-        height: 130px;
-        margin-left: 0px;
-        background-color: #000000;
-        z-index: 1000;
-        box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
-        transform: translateY(-100%);
-        transition: transform 0.3s ease;
-
-    }
-
-    .menu-hamburguesa {
-        align-items: center;
-    }
-
-    #menu-inicial ul.menu {
-        list-style: none;
-        padding: 0;
-        display: flex;
-        flex-direction: column; 
-        align-items: flex-start;
-        margin-left: 0;
-    }
-
-    #menu-inicial ul.menu li {
-        font-size: 10px;
-        font-family: Arial, sans-serif;
-        padding: 5px 0;
-    }
-
-    #menu-inicial ul.menu li a, #menu-inicial ul.menu li router-link {
-        text-decoration: none;
-    }
-
-    #menu-fijo ul.menu {
-        list-style: none;
-        padding: 0;
-        display: grid;
-        grid-template-columns: repeat(2, 1fr); 
-        gap: 3px; 
-        margin: 0;
-        margin-top: 20px;
-    }
-
-    #menu-fijo ul.menu li {
-        font-size: 10px;
-        font-family: Arial, sans-serif;
-        text-align: center; 
-        padding: 5px;
-    }
-
-    #menu-fijo ul.menu li a, #menu-fijo ul.menu li router-link {
-        text-decoration: none;
-        color: #D9AB23;
-    }
-
-    #menu-fijo.activo {
-        transform: translateY(0);
-    }
-
-    .carrito-icono {
-    margin-left: 55px;
-    font-size: 18px;
-    color: #ffffff;
-    cursor: pointer;
+@media (max-width: 767px) {
+  /* Header */
+  header {
+    margin-left: 0 !important;
+    padding: 20px 10px !important;
+    text-align: center;
   }
 
+  #text1 {
+    width: 90% !important;
+    margin: 20px auto 0 auto !important;
+    font-size: 16px !important;
+    height: auto !important;
+    text-align: center;
+  }
 
-    .modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.5);
-    display: flex;
+  /* Navegación */
+  nav {
+    margin-left: 0 !important;
+  }
+
+  #menu-inicial, 
+  #menu-fijo {
+    margin-left: 0 !important;
+    padding: 10px !important;
+  }
+
+  ul.menu {
+    margin-left: 0 !important;
+    flex-wrap: wrap;
     justify-content: center;
-    align-items: center;
-    z-index: 999;
-    text-decoration: none;
-    color: #000;
+    gap: 10px;
   }
 
-  .modal-contenido {
-    background-color: #b29335;
-    padding: 20px;
-    border-radius: 10px;
-    width: 80%;
-    max-width: 600px;
-    box-shadow: 0 4px 8px rgba(255, 253, 253, 0.369);
-    text-decoration: none;
+  ul.menu li {
+    font-size: 14px !important;
   }
 
-  .imagen-producto {
-    width: 50px;
-    height: 50px;
-    border-radius: 400px;
-    object-fit: cover;
-    margin-left: 0px;
-    text-decoration: none;
-  }
-    .eliminar {
-    cursor: pointer;
-    color: rgb(0, 0, 0);
-    font-size: 20px;
-    margin-left: 160px;
-
-    }
-    .eliminar:hover {
-    color: darkred;
-    }
-    .mensaje-exito {
-      text-align: center;
-    }
-
-    .mensaje-exito h2 {
-      color: #f4ffb0;
-      font-size: 24px;
-      margin-bottom: 10px;
-      font-family: 'Jura', sans-serif;
-    }
-
-    .mensaje-exito p {
-      color: #000000;
-      font-size: 16px;
-      margin-bottom: 20px;
-      font-family: 'Jura', sans-serif;
-    }
-
-    .boton-comprar,
-    .boton-cerrar {
-      color: black;
-      padding: 10px 20px;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      margin-top: 230px;
-      margin: 40px;
-    }
-
-  .boton-comprar {
-    background-color: #d9ab23;
-    color: #ffffff;
-    font-size: 13px;
+  .carrito-icono {
+    margin-left: 15px !important;
   }
 
-  .boton-cerrar {
-    background-color: rgb(140, 52, 52);
-    color: #ffffff;
+  /* Líneas divisoras */
+  hr {
+    width: 90% !important;
+    margin-left: 5% !important;
+    margin-top: 20px !important;
   }
 
+  #l2, #l3, #l1 {
+    width: 90% !important;
+    margin-left: 5% !important;
+    margin-top: 20px !important;
+  }
 
-    #l3 {
-        width: 60px;
-        margin-left: 5%;
-        margin-top: -210px;
-    }
+  /* Secciones de productos */
+  .section-title {
+    margin-left: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    padding: 20px 0;
+    font-size: 20px !important;
+  }
 
-    #l1 {
-        margin-top: -11px;
-        width: 60px;
-        margin-left: 78%;
-    }
-    #amasijos{
-      height: 200px;
-      width: 80px;
-      font-family: 'Jura', sans-serif;
-      margin-left: 164px;
-      font-size: 14px;
-      margin-top: 20px;
-    }
-    #bebidas-frias{
-        height: 200px;
-        width: 80px;
-        font-family: 'Jura', sans-serif;
-        margin-left: 164px;
-        font-size: 14px;
-        margin-top: -10px;
-    }
-    #bebidas-calientes{
-        height: 200px;
-        width: 80px;
-        font-family: 'Jura', sans-serif;
-        margin-left: 164px;
-        font-size: 14px;
-        margin-top: 60px;
-        transition: transform 0.3s ease, color 0.3s ease; 
-    }
-    #desayunos{
-        height: 200px;
-        width: 80px;
-        font-family: 'Jura', sans-serif;
-        margin-left: 164px;
-        font-size: 14px;
-        margin-top: 60px;
-        transition: transform 0.3s ease, color 0.3s ease; 
-    }
-    #hojaldres{
-        height: 200px;
-        width: 80px;
-        font-family: 'Jura', sans-serif;
-        margin-left: 164px;
-        font-size: 14px;
-        margin-top: 20px;
-        transition: transform 0.3s ease, color 0.3s ease; 
-    }
-    #malteadas{
-        height: 200px;
-        width: 80px;
-        font-family: 'Jura', sans-serif;
-        margin-left: 164px;
-        font-size: 14px;
-        margin-top: 60px;
-        transition: transform 0.3s ease, color 0.3s ease; 
-    }
-
-    .modal{
-      height: 600px;
-    }
-
-    .modal-contenido {
-    width: 90%; 
-    height: 364px; 
-    padding: 5px;
-    margin-top: -190px;
-    }
-
-    .este {
-      gap: 5px;
-    }
-
-    .t{
-      font-size: 15px;
-    }
-
-    .producto-carrito {
-      width: calc(50% - 10px); /* Ajustar el ancho para pantallas pequeñas */
-    }
-
-    .carta1 {
-      width: 100%; /* Hacer las cartas más grandes para pantallas pequeñas */
-      height: auto;
-      margin-left: -30px /* Ajustar la altura */
-    }
-
-    .boton-cerrar {
-      font-size: 14px;
-      margin-top: -180px;
-    }
-
-    .eliminar {
-      font-size: 20px; /* Reducir el tamaño del botón de eliminar */
-    }
-
-    .imagen-producto {
-      height: 100px; /* Reducir la altura de las imágenes */
-    }
-
-    #cartas-contenedor {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr); 
-    gap: 30px; 
-    justify-content: center; 
-    padding: 10px; 
-    }
+  /* Tarjetas de productos */
+  #cartas-contenedor {
+    grid-template-columns: 1fr !important;
+    margin: 20px 5% !important;
+  }
 
   .carta {
-    height: 200px;
-    width: 100%; 
-    padding: 10px;
-    text-align: center;
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-    background-color: #fff; 
-    border: 1px solid #d9ab23; 
-    border-radius: 5px; 
-    margin-left: -10px;
-  }
-
-  .carta:hover {
-    transform: scale(1.05);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    height: auto !important;
+    padding: 15px !important;
   }
 
   .carta-imagen {
-    width: 100%; 
-    height: 60%;
-    border-radius: 5px;
-    display: block; 
+    height: 200px !important;
   }
 
-  .carta-titulo {
-    font-size: 12px;
-    color: #a65814;
-    margin-top: -1px;
-    font-family: 'Jura', sans-serif;
+  /* Carrito de compras */
+  .carrito-c {
+    width: 90% !important;
+    min-width: 90% !important;
+    max-width: 90% !important;
+    right: 5% !important;
+    left: 5% !important;
+    top: 50px;
+    bottom: 20px;
   }
 
-  .carta-descripcion {
-    font-size: 12px;
-    color: #333;
-    margin-top: -5px;
-    font-family: 'Jura', sans-serif;
+  .carta1 {
+    grid-template-columns: 1fr !important;
   }
+
+  .imagen-producto {
+    grid-column: 1 !important;
+    grid-row: auto !important;
+    width: 100% !important;
+    height: 150px !important;
+    margin-bottom: 10px;
+  }
+
+  /* Footer */
+  footer {
+    margin-top: 40px !important;
+  }
+
+  .wrapper {
+    width: 100% !important;
+    padding: 10px !important;
+  }
+
+  /* Ajustes generales */
   button {
-    background-color: #D9AB23;
-    color: white;
-    padding: 10px 10px; 
-    border: none;
-    border-radius: 5px; 
-    font-size: 10px; 
-    font-family: 'Jura', sans-serif;
-    cursor: pointer; 
-    transition: background-color 0.3s ease, transform 0.2s ease; 
-    margin-top: -5px;
+    padding: 8px 15px !important;
+    font-size: 14px !important;
   }
 
+  /* Menú fijo para móviles */
+  #menu-fijo {
+    padding: 10px 0 !important;
+  }
+
+  #menu-fijo ul.menu {
+    overflow-x: auto;
+    white-space: nowrap;
+    display: block;
+    padding: 5px 0;
+  }
+
+  #menu-fijo ul.menu li {
+    display: inline-block;
+    margin: 0 8px;
+  }
+
+  /* Ajustes para el texto en móviles */
+  .te, .tex, .t {
+    font-size: 16px !important;
+  }
+
+  /* Botones del carrito */
+  .boton-comprar {
+    padding: 10px !important;
+    font-size: 16px !important;
+  }
+
+  /* Cantidad en carrito */
+  .cantidad-control {
+    font-size: 14px !important;
+  }
+
+  .btn-cantidad {
+    padding: 3px 8px !important;
+    font-size: 16px !important;
+  }
 }
+
 </style>

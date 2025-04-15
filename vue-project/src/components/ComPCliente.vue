@@ -5,12 +5,13 @@ import jsPDF from 'jspdf'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
 import lottie from 'lottie-web'
+import Swal from 'sweetalert2'
 
 const router = useRouter()
 const isHovering = ref(false)
 
 // Definicion del tipo para estados de pedido
-type EstadoPedido = 'procesando' | 'en_proceso' | 'completado' | 'nuevo'
+type EstadoPedido = 'procesando' | 'en_proceso' | 'completado' | 'nuevo' | 'cancelado'
 
 const estadoVista = reactive({
   textoEstado: 'Esperando confirmación del pedido',
@@ -286,6 +287,62 @@ onUnmounted(() => {
     intervalId = null
   }
 })
+
+
+
+// Función para cancelar el pedido
+const cancelarPedido = async () => {
+  const resultado = await Swal.fire({
+    title: '¿Estás segur@?',
+    text: '¿Deseas cancelar este pedido? Esto no se puede deshacer',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#335500',
+    cancelButtonColor: '#730D06',
+    confirmButtonText: 'Si, cancelar',
+    cancelButtonText: 'No'
+  })
+
+  if (!resultado.isConfirmed) return
+
+  try {
+    cargando.value = true
+
+    // Actualizar estado en el backend
+    if (pedidoId.value) {
+      await axios.put(`http://localhost:8000/pedidos/${pedidoId.value}/estado`, {
+        estado: 'cancelado',
+        mensaje: 'Pedido cancelado por el cliente'
+      });
+      
+      // Actualizar estado localmente
+      estadoVista.ultimoEstado = 'cancelado';
+      estadoVista.textoEstado = 'Pedido cancelado';
+      estadoVista.iconoEstado = 'fa-times-circle';
+    }
+
+    localStorage.removeItem('cliente_actual')
+    localStorage.removeItem('pedido_id')
+    clienteActual.value = null
+    pedidoActual.value = []
+    pedidoId.value = null
+
+    await Swal.fire({
+      title: 'Cancelado',
+      text: 'El pedido ha sido cancelado.',
+      icon: 'success',
+      confirmButtonText: 'Aceptar'
+    })
+
+    router.push('/Menu')
+  } catch (error) {
+    console.error('Error al cancelar pedido:', error)
+    Swal.fire('Error', 'Ocurrió un error al cancelar el pedido', 'error')
+  } finally {
+    cargando.value = false
+  }
+}
+
 </script>
 
 <template>
@@ -414,17 +471,23 @@ onUnmounted(() => {
         </div>
         
         <div class="estado-pedido">
-            <div class="estado-card como-va">
-                <h3>¿Cómo va tu pedido?</h3>
-                <div class="estado-content">
-                    <i class="fas" :class="estadoVista.iconoEstado"></i>
-                    <p>{{ estadoVista.textoEstado }}</p>
-                    <span class="tiempo-actualizacion">
-                        Última actualización: {{ new Date(estadoVista.ultimaActualizacion).toLocaleTimeString() }}
-                    </span>
-                </div>
+        <div class="estado-card como-va">
+            <h3>¿Cómo va tu pedido?</h3>
+            <div class="estado-content">
+                <i class="fas" :class="estadoVista.iconoEstado"></i>
+                <p>{{ estadoVista.textoEstado }}</p>
+                <span class="tiempo-actualizacion">
+                    Última actualización: {{ new Date(estadoVista.ultimaActualizacion).toLocaleTimeString() }}
+                </span>
             </div>
+            <button 
+                class="btn-cancelar"
+                @click="cancelarPedido"
+                :disabled="!pedidoId || cargando">
+                <i class="fas fa-times-circle"></i> Cancelar Pedido
+            </button>
         </div>
+      </div>
     </div>
 </template>
 
@@ -763,6 +826,39 @@ hr {
   background-color: #cccccc;
   cursor: not-allowed;
   opacity: 0.7;
+}
+
+.btn-cancelar {
+    margin-top: 30px;
+    margin-left: 45px;
+    padding: 10px 20px;
+    background-color: #ff4444;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-family: 'Jura', sans-serif;
+}
+
+.btn-cancelar:hover {
+    background-color: #cc0000;
+    transform: scale(1.05);
+}
+
+.btn-cancelar:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.btn-cancelar i {
+    font-size: 1.2em;
 }
 
 .acciones-pedido {

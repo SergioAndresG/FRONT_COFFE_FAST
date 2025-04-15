@@ -34,7 +34,7 @@ const obtenerProductos = async () => {
     productos.value = response.data.map((p: any) => ({
       id: p.id,
       nombre: p.nombre,
-      precio: p.precio_unitario, 
+      precio: p.precio_salida, 
       ruta_imagen: p.ruta_imagen,
       categoria: p.categoria,
       cantidad: 1
@@ -184,7 +184,7 @@ const finalizarCompra = async (clienteData) => {
     const productosParaEnviar = carrito.value.map(producto => ({
         producto_id: producto.id,
         cantidad: producto.cantidad,
-        precio_unitario: producto.precio
+        precio_salida: producto.precio
     }));
 
     const pedidoData = {

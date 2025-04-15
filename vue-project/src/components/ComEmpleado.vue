@@ -86,28 +86,28 @@ const actualizarClose = async () => {
     <div class="alert-config-container">
       <i class="fas fa-box-open panel-icon"></i>
        <h1 class="alert-config-title">Panel de Materia Prima</h1>
-       <button class="alert-config-button"><a href="/GMAEmp">Ver mas <i class="fas fa-arrow-right" style="margin-left: 12px;"></i></a></button>
+       <button class="alert-config-button"><a href="/Materia">Ver mas <i class="fas fa-arrow-right" style="margin-left: 12px;"></i></a></button>
     </div>
     <div class="alert-config-container2">
       <i class="fas fa-tags panel-icon"></i>
        <h1 class="alert-config-title">Panel de Productos</h1>
-       <button class="alert-config-button"><a href="/GPEmpleados">Ver mas <i class="fas fa-arrow-right" style="margin-left: 12px;"></i></a></button>
+       <button class="alert-config-button"><a href="/Productos">Ver mas <i class="fas fa-arrow-right" style="margin-left: 12px;"></i></a></button>
     </div>
 
     <div class="alert-config-container4">
       <i class="fas fa-file-invoice-dollar panel-icon"></i>
         <h1 class="alert-config-title">Panel Facturas</h1>
-        <button class="alert-config-button"><a href="/Gest">Ver mas <i class="fas fa-arrow-right" style="margin-left: 12px;"></i></a></button>
+        <button class="alert-config-button"><a href="/Pedidos">Ver mas <i class="fas fa-arrow-right" style="margin-left: 12px;"></i></a></button>
     </div>
     <div class="alert-config-container5">
       <i class="fas fa-clipboard-list panel-icon"></i>
         <h1 class="alert-config-title">Panel Pedidos</h1>
-        <button class="alert-config-button"><a href="/Gest">Ver mas <i class="fas fa-arrow-right" style="margin-left: 12px;"></i></a></button>
+        <button class="alert-config-button"><a href="/Pedidos">Ver mas <i class="fas fa-arrow-right" style="margin-left: 12px;"></i></a></button>
     </div>
     <div class="alert-config-container6">
       <i class="fa-solid fa-paste"></i><br>
         <h1 class="alert-config-title">Menu</h1>
-        <button class="alert-config-button"><a href="/Gest">Ver mas <i class="fas fa-arrow-right" style="margin-left: 12px;"></i></a></button>
+        <button class="alert-config-button"><a href="/Menu">Ver mas <i class="fas fa-arrow-right" style="margin-left: 12px;"></i></a></button>
     </div>
   </section>
   <div class="buttom-container">

@@ -4,10 +4,16 @@ import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import axios from 'axios'
 import Swal from 'sweetalert2';
+import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
+import { faArrowLeft } from '@fortawesome/free-solid-svg-icons';
 
 
 const router = useRouter()
 const route = useRoute()
+
+const volver = () => {
+  router.go(-1)
+}
 
 const horaActual = ref('')
 let intervaloHora: ReturnType<typeof setInterval>
@@ -24,10 +30,21 @@ interface Pedido {
   titulo: string
   fecha: string
   cliente: string
-  idCliente: string
+  idCliente: number
   productos: Array<Producto>
   estado: 'nuevo' | 'en_proceso' | 'completado' | 'cancelado'
   mensaje?: string
+}
+
+interface Cliente {
+  numeroId: string;
+  nombre: string;
+}
+
+interface ProductoPedido {
+  id: number;
+  cantidad: number;
+  precio: number;
 }
 
 // Refs para la aplicación
@@ -47,8 +64,45 @@ const actualizarHora = () => {
   })
 }
 
+const crearPedido = async (cliente: Cliente, productos: ProductoPedido[]) => {
+  try {
+    const pedidoData = {
+      cliente_id: cliente.numeroId,
+      productos: productos.map(p => ({
+        producto_id: p.id,
+        cantidad: p.cantidad,
+        precio_unitario: p.precio
+      })),
+      estado: "nuevo"
+    };
+    
+    const response = await axios.post('http://localhost:8000/pedidos', pedidoData);
+    
+    if (response.data.pedido_id) {
+      // Guardar en localStorage para el panel de cliente
+      localStorage.setItem('pedido_id', response.data.pedido_id);
+      localStorage.setItem('cliente_actual', JSON.stringify(cliente));
+      
+      return response.data.pedido_id;
+    }
+  } catch (error) {
+    console.error('Error al crear pedido:', error);
+    throw error;
+  }
+}
+
 const completarPedido = async (pedido: Pedido) => {
   try {
+
+    Swal.fire({
+      title: "Procesando",
+      text: "Procesando tu pedido...",
+      allowOutsideClick: false,
+      didOpen: () => {
+        Swal.showLoading();
+      }
+    });
+
     // Agregar validación más estricta
     const productosCantidad: Record<string, number> = {};
     
@@ -70,23 +124,47 @@ const completarPedido = async (pedido: Pedido) => {
       });
       return;
     }
+
+    if (!pedido.id) {
+      Swal.fire({
+        icon: "error",
+        title: "Error al completar pedido",
+        text: "ID de pedido no válido",
+      });
+      return;
+    }
+
+    console.log("Actualizando inventario:", productosCantidad);
+    await axios.post("http://localhost:8000/comprar", {
+      productos: productosCantidad
+    }, {
+      headers: {
+        "Content-Type": "application/json"
+      }
+    });
+
+    if (!pedido.id) {
+      Swal.fire({
+        icon: "error",
+        title: "Error al completar pedido",
+        text: "ID de pedido no válido",
+      });
+      return;
+    }
     
-    console.log("Enviando al servidor:", productosCantidad);
-    
-    // Enviar la compra al backend
-    const response = await axios.post("http://localhost:8000/comprar", productosCantidad, {
+    // PASO 2: Generar factura con el endpoint /pedidos/{id}/completar
+    console.log("Generando factura para pedido:", pedido.id);
+    const responseFactura = await axios.put(`http://localhost:8000/pedidos/${pedido.id}/completar`, {}, {
       headers: {
         "Content-Type": "application/json"
       }
     });
     
-    console.log("Compra realizada:", response.data);
-    
     // Mostrar mensaje de éxito
     Swal.fire({
       icon: "success",
-      title: "Compra procesada",
-      text: `Factura #${response.data.factura_id} por $${response.data.precio_total.toFixed(2)}`,
+      title: "Pedido completado",
+      text: `Factura #${responseFactura.data.factura_id} por $${responseFactura.data.precio_total.toFixed(2)}`,
     });
  
   } catch (error) {
@@ -109,25 +187,60 @@ const manejarPedidoCompletado = (pedido: Pedido) => {
 };
 
 
-// Función para verificar si una fecha es de hoy
-const esDeHoy = (fechaStr: string): boolean => {
+const esDeHoy = (fechaStr) => {
+  if (!fechaStr) return true;
+  
   try {
-    const fechaPedido = new Date(fechaStr)
-    const hoy = new Date()
+    // Convertir ambas fechas a UTC para comparar solo las partes de fecha
+    const fechaPedido = new Date(fechaStr);
+    const hoy = new Date();
     
-    return fechaPedido.getDate() === hoy.getDate() &&
-           fechaPedido.getMonth() === hoy.getMonth() &&
-           fechaPedido.getFullYear() === hoy.getFullYear()
+    // Normalizar ambas fechas a UTC
+    const pedidoUTC = new Date(Date.UTC(
+      fechaPedido.getUTCFullYear(),
+      fechaPedido.getUTCMonth(),
+      fechaPedido.getUTCDate()
+    ));
+    
+    const hoyUTC = new Date(Date.UTC(
+      hoy.getUTCFullYear(),
+      hoy.getUTCMonth(),
+      hoy.getUTCDate()
+    ));
+    
+    // Calcular la diferencia en días
+    const diffDias = Math.floor((pedidoUTC - hoyUTC) / (1000 * 60 * 60 * 24));
+    
+    // Permitir pedidos de hoy y de mañana (con lógica flexible)
+    return diffDias >= -1 && diffDias <= 1;
   } catch (e) {
-    console.error('Error al parsear fecha:', e)
-    return false
+    console.error('Error al parsear fecha:', e);
+    return true; // En caso de error, mostrar el pedido
   }
 }
 
 // Computed property para filtrar pedidos del día actual
 const pedidosDeHoy = computed(() => {
-  return pedidos.value.filter(pedido => esDeHoy(pedido.fecha))
+  // Añadir debug para ver qué pedidos están siendo filtrados
+  const filtrados = pedidos.value.filter(pedido => {
+    const esDehoy = esDeHoy(pedido.fecha);
+    if (!esDehoy) {
+      console.log('Pedido filtrado (no es de hoy):', {
+        id: pedido.id, 
+        fecha: pedido.fecha, 
+        estado: pedido.estado
+      });
+    }
+    return esDehoy;
+  });
+  
+  // Mostrar información del filtrado
+  console.log(`Pedidos totales: ${pedidos.value.length}, Pedidos de hoy: ${filtrados.length}`);
+  console.log('Estados de los pedidos de hoy:', filtrados.map(p => p.estado));
+  
+  return filtrados;
 })
+
 
 
 // Cargar pedidos
@@ -287,6 +400,7 @@ const cargarDetallesPedido = async (pedidoId: string) => {
 }
 
 // Iniciar y limpiar el intervalo
+// En el panel de pedidos, modificar el intervalo de actualización
 onMounted(() => {
   actualizarHora()
   intervaloHora = setInterval(actualizarHora, 1000)
@@ -294,20 +408,19 @@ onMounted(() => {
   cargarPedidos()
   registrarNuevoPedido()
   
-  // Actualizar estados cada minuto
+  // Actualizar estados cada 5 segundos (más frecuente)
   const intervalActualizar = setInterval(() => {
+    cargarPedidos() // Actualizar toda la lista
     if (pedidoActual.value) {
       cargarDetallesPedido(pedidoActual.value.id)
-      cargarPedidos()
     }
-  }, 30000)
+  }, 5000) // 5 segundos
   
   onUnmounted(() => {
     clearInterval(intervaloHora)
     clearInterval(intervalActualizar)
   })
-})
-
+});
 
 </script>
 
@@ -316,7 +429,7 @@ onMounted(() => {
     <nav>
       <ComImagen/>
       <ul>
-        <li class="l"><router-link to="/Sesion">Empleados</router-link></li>
+        <div class="container-buttom-come-back"><button @click="volver" class="btn-come-back"><font-awesome-icon :icon="faArrowLeft" class="arrow-back"/>Regresar</button></div>
       </ul>
     </nav>
   </header>
@@ -376,23 +489,30 @@ onMounted(() => {
         <div class="pedidos-container" v-else>
           <div v-for="pedido in pedidosDeHoy" :key="pedido.id" class="pedido-completo">
             <div class="pedido-item" :class="{
-                'nuevo': pedido.estado === 'nuevo',
-                'en-proceso': pedido.estado === 'en_proceso',
-                'completado': pedido.estado === 'completado'
-              }">
+              'nuevo': pedido.estado === 'nuevo',
+              'en-proceso': pedido.estado === 'en_proceso',
+              'completado': pedido.estado === 'completado',
+              'cancelado': pedido.estado === 'cancelado'
+          }">
               <div class="pedido-icono">
-                <i class="fas fa-utensils"></i>
+                  <i class="fas" :class="{
+                      'fa-utensils': pedido.estado !== 'cancelado',
+                      'fa-times-circle': pedido.estado === 'cancelado'
+                  }"></i>
               </div>
               
               <div class="pedido-contenido">
                 <div class="pedido-header">
-                  <span class="pedido-numero">{{ pedido.titulo }}</span>
-                  <span class="pedido-cliente">{{ pedido.cliente }}</span>
-                </div>
+                      <span class="pedido-numero">{{ pedido.titulo }}</span>
+                      <span class="pedido-cliente">{{ pedido.cliente }}</span>
+                      <span v-if="pedido.estado === 'cancelado'" class="estado-cancelado">
+                          (Cancelado)
+                      </span>
+                  </div>
                 
-                <div class="pedido-productos">
+                <div class="pedido-productos" >
                   <div v-for="(producto, index) in pedido.productos" :key="index" class="producto-item">
-                    {{ producto.nombre }} (x{{ producto.cantidad }}) - ${{ producto.precio_unitario * producto.cantidad }}
+                     (x{{ producto.cantidad }}) - ${{ producto.precio_unitario * producto.cantidad }} {{ producto.nombre }}
                   </div>
                 </div>
                 
@@ -407,27 +527,26 @@ onMounted(() => {
                     }}</strong>
                   </div>
                 </div>
-              </div>
+              </div> 
             </div>
             
               
-            <div class="pedido-acciones-externas" >
-              
+            <div class="pedido-acciones-externas">
               <button 
-                class="btn-completado"
-                @click="manejarPedidoCompletado(pedido)"
-                :disabled="pedido.estado === 'completado'"
+                  class="btn-completado"
+                  @click="manejarPedidoCompletado(pedido)"
+                  :disabled="pedido.estado === 'completado' || pedido.estado === 'cancelado'"
               >
-                {{ pedido.estado === 'completado' ? '✓ Completado' : 'Pedido completo' }}
+                  {{ pedido.estado === 'completado' ? '✓ Completado' : 'Pedido completo' }}
               </button>
               <button 
-                class="btn-proceso"
-                @click="cambiarEstadoPedido(pedido.id, 'en_proceso')"
-                :disabled="pedido.estado !== 'nuevo'"
+                  class="btn-proceso"
+                  @click="cambiarEstadoPedido(pedido.id, 'en_proceso')"
+                  :disabled="pedido.estado !== 'nuevo' && pedido.estado !== 'en_proceso'"
               >
-                {{ pedido.estado === 'en_proceso' ? '↻ En proceso' : 'Poner en proceso' }}
+                  {{ pedido.estado === 'en_proceso' ? '↻ En proceso' : 'Poner en proceso' }}
               </button>
-            </div>
+          </div>
           </div>
         </div>
       </div>
@@ -455,64 +574,52 @@ header {
     align-items: center;
     justify-content: space-between;
 }
+.btn-come-back{
+  width: 120px;
+  height: 30px;
+  border: none;
+  border-radius: 10px;
+  background-color: #faad14;
+  font-family: 'Jura', sans-serif;
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  padding: 7px;
+  transition: all 0.2s ease-in-out;
+}
+.btn-come-back:hover{
+  background-color: #A65814;
+  transform: scale(1.05);
+  cursor:pointer;
+}
+.container-buttom-come-back{
+  margin-top: -3px;
+  margin-left: 1%;
+  padding: 23px;
+}
+.arrow-back{
+  margin-top: 1px;
+}
 
-ul li {
-    text-decoration: none;
-    border-bottom: 5px solid #A65814;
-    transition: border-bottom-color 0.3s ease-in-out;
-    border-radius: 5px;
-  }
-  
-  ul li:hover {
-    border-bottom-color: rgb(231, 230, 244);
-  }
+nav{
+  margin: 0 auto;
+  max-width: 1200px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom:2px solid #c7981a;
+  margin-left: 150px;
+}
 
-  nav{
-    margin: 0 auto;
-    max-width: 1200px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-bottom:2px solid #c7981a;
-    margin-left: 200px;
-  }
-  
-  nav ul {
-    list-style: none;
-    display: flex;
-    gap: 20px;
-    margin-left: 830px;
-    margin-top: 100px;
-    padding: 0;
+nav ul {
+  list-style: none;
+  display: flex;
+  gap: 20px;
+  margin-left: 830px;
+  margin-top: 100px;
+  padding: 0;
 
-  }
-  
-  nav li a {
-    font-family: 'Jura', sans-serif;
-
-    text-decoration: none;
-    color: white;
-    padding: 10px;
-  }
-  
-  #res:hover {
-    background-color: #ff9178;
-    color: aliceblue;
-  }
-  
-  #res{
-    transition: background-color 0.3s ease-in-out, color 0.3s ease-in-out;
-    background-color: #e03743;
-    text-decoration: none;
-    border-bottom: 0px;
-    width: 150px;
-    text-align: center;
-    font-size: 18px;
-    padding: 4px;
-    border-radius: 15px;
-    font-family: 'Jura', sans-serif;
-
-  }
+}
 
   .header-pedidos {
   background-color: transparent;

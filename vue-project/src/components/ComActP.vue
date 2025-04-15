@@ -1,51 +1,86 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed, ref, watch } from "vue";
 import axios from "axios";
 import Swal from "sweetalert2";  
 import { defineEmits } from 'vue';
 const emit = defineEmits(['close']);
 
-
-//Variable para guaradar los daos de la busqueda
+// Variable para guardar los datos de la busqueda
 const searchTerm = ref("")
 const productos = ref([]);
 const ActModal = ref(false);
-//Con la palabra any le indicamos que puede guardar un dato de cualquier tipo, en este caso de tipo del objeto producto
+// Con la palabra any le indicamos que puede guardar un dato de cualquier tipo, en este caso de tipo del objeto producto
 const productoSeleccionado = ref<any>(null);
 const categorias = ref([]);
-
+const tipos = ref(["HECHO", "COMPRADO"]);
+const materiasPrimas = ref([]);
+const unidadesMedida = ref([]);
 
 const formData = ref({
   id: null,
   nombre: "",
-  categoria: "COMIDA",
+  categoria: "",
+  tipo: "COMPRADO", // Valor por defecto
   precio: null,
   cantidad: 0,
   stock_minimo: 0,
-  idUsuarioR: 0
+  idUsuarioR: 0,
+  ingredientes: [] as Array<{
+    materia_prima_id: number,
+    cantidad_ingrediente: number,
+    unidad_id: number | null,
+    nombre_materia_prima?: string
+  }>
 });
 
-//estado para rastrear que se ha modificado
+// estado para rastrear que se ha modificado
 const camposModificados = ref({
   id: false,
   nombre: false,
   categoria: false,
+  tipo: false,
   precio: false,
   cantidad: false,
   stock_minimo: false,
-  idUsuarioR: false
+  idUsuarioR: false,
+  ingredientes: false
 })
+
+// Computed property para mostrar solo si es producto hecho
+const mostrarReceta = computed(() => {
+  return formData.value.tipo === "HECHO";
+});
 
 const cargarCategorias = async () => {
   try {
     const respuesta = await axios.get("http://127.0.0.1:8000/productos/categorias")
     categorias.value = respuesta.data
   } catch (error) {
-    console.error("Error al cargar los produtos", error)
+    console.error("Error al cargar los categorías", error)
+  }
+}
+
+const cargarMateriasPrimas = async () => {
+  try {
+    const respuesta = await axios.get("http://127.0.0.1:8000/materia");
+    materiasPrimas.value = respuesta.data
+  } catch (error) {
+    console.error("Error al cargar las materias primas", error)
+  }
+}
+
+const cargarUnidadesMedida = async () => {
+  try {
+    const respuesta = await axios.get("http://127.0.0.1:8000/materia/unidades-medida");
+    unidadesMedida.value = respuesta.data
+  } catch (error) {
+    console.error("Error al cargar las unidades de medida", error)
   }
 }
 
 cargarCategorias();
+cargarMateriasPrimas();
+cargarUnidadesMedida();
 
 const cargarProductos = async () => {
   try {
@@ -56,15 +91,26 @@ const cargarProductos = async () => {
   }
 }
 
-//Funcion para filtrar los productos por terminos de busqueda
-// Definimos la funcion computed para que se actualice cuando halla un cambio
+// Función para cargar los ingredientes de un producto
+const cargarIngredientes = async (productoId) => {
+  try {
+    const respuesta = await axios.get(`http://127.0.0.1:8000/productos/${productoId}/receta`);
+    return respuesta.data;
+  } catch (error) {
+    console.error("Error al cargar la receta del producto", error);
+    return [];
+  }
+}
+
+// Función para filtrar los productos por términos de búsqueda
+// Definimos la función computed para que se actualice cuando haya un cambio
 const filtrarProductos = computed(() => {
-  // Si el campo esta vacio devuelve los productos sin ningun cambgio
+  // Si el campo está vacío devuelve los productos sin ningún cambio
   if(!searchTerm.value.trim()) return productos.value
-  // Obtenemos el valor lo pareseamos a minisculas y le quitamos los espacio (trim())
+  // Obtenemos el valor lo parseamos a minúsculas y le quitamos los espacios (trim())
   const term = searchTerm.value.toLowerCase().trim()
-  // Filtramos lo prodcutos que cumplan con el termino de busqueda
-  // por cada producto tomamos su nombre, se pasa a minusculas y si incluye el termino de busqueda lo dejamos si no, lo descartamos
+  // Filtramos los productos que cumplan con el término de búsqueda
+  // por cada producto tomamos su nombre, se pasa a minúsculas y si incluye el término de búsqueda lo dejamos si no, lo descartamos
   return productos.value.filter(pro => pro.nombre.toLowerCase().includes(term))
 });
 
@@ -72,6 +118,27 @@ cargarProductos();
 
 const handleInputChange = async (campo: string) => {
   camposModificados.value[campo] = true
+}
+
+// Agregar un ingrediente a la receta
+const agregarIngrediente = () => {
+  formData.value.ingredientes.push({
+    materia_prima_id: null,
+    cantidad_ingrediente: 0,
+    unidad_id: null
+  });
+  camposModificados.value.ingredientes = true;
+}
+
+// Eliminar un ingrediente de la receta
+const eliminarIngrediente = (index) => {
+  formData.value.ingredientes.splice(index, 1);
+  camposModificados.value.ingredientes = true;
+}
+
+// Manejar cambios en los ingredientes
+const handleIngredienteChange = () => {
+  camposModificados.value.ingredientes = true;
 }
 
 const handleSubmit = async () => {
@@ -86,8 +153,20 @@ const handleSubmit = async () => {
           case 'categoria':
             camposActualizados['categoria'] = formData.value.categoria;
             break;
+          case 'tipo':
+            camposActualizados['tipo'] = formData.value.tipo;
+            break;
           case 'idUsuarioR':
             camposActualizados['id_usuario'] = formData.value.idUsuarioR;
+            break;
+          case 'ingredientes':
+            if (formData.value.tipo === "HECHO") {
+              camposActualizados['ingredientes'] = formData.value.ingredientes.map(ing => ({
+                materia_prima_id: ing.materia_prima_id,
+                cantidad_ingrediente: ing.cantidad_ingrediente,
+                unidad_id: ing.unidad_id
+              }));
+            }
             break;
           default:
             camposActualizados[campo] = formData.value[campo];
@@ -98,23 +177,23 @@ const handleSubmit = async () => {
     console.log('Payload being sent:', camposActualizados);
 
     if (Object.keys(camposActualizados).length > 0) {
-    const response = await axios.patch(
-      `http://127.0.0.1:8000/productos/${formData.value.id}`, 
-      camposActualizados
-    );
+      const response = await axios.patch(
+        `http://127.0.0.1:8000/productos/${formData.value.id}`, 
+        camposActualizados
+      );
 
-    Swal.fire({
-        icon: "success",
-        title: "Éxito",
-        text: "Producto actualizado exitosamente",
-      });
+      Swal.fire({
+          icon: "success",
+          title: "Éxito",
+          text: "Producto actualizado exitosamente",
+        });
 
-    closeModal();
-    cargarProductos();
+      closeModal();
+      cargarProductos();
     } else {
       Swal.fire({
         icon:"info",
-        title:"Informacion",
+        title:"Información",
         text:"No se han realizado cambios"
       })
     }
@@ -130,35 +209,72 @@ const handleSubmit = async () => {
   }
 };
 
-const openActModal = (producto: any) => {
+const openActModal = async (producto: any) => {
   formData.value = {
-  id: producto.id,
-  nombre: producto.nombre || "",
-  categoria: producto.categoria || null,
-  precio: producto.precio_unitario || null,
-  cantidad: producto.cantidad || null,
-  stock_minimo: producto.stock_minimo || null,
-  idUsuarioR: producto.id_usuario
-};
+    id: producto.id,
+    nombre: producto.nombre || "",
+    categoria: producto.categoria || "",
+    tipo: producto.tipo || "COMPRADO",
+    precio: producto.precio_unitario || null,
+    cantidad: producto.cantidad || null,
+    stock_minimo: producto.stock_minimo || null,
+    idUsuarioR: producto.id_usuario,
+    ingredientes: []
+  };
 
-for(const campo in camposModificados.value) {
-  camposModificados.value[campo] = false;
-}
+  // Si es un producto HECHO, cargar los ingredientes
+  if (producto.tipo === "HECHO") {
+    try {
+      const ingredientes = await cargarIngredientes(producto.id);
+      formData.value.ingredientes = ingredientes.map(ing => ({
+        materia_prima_id: ing.materia_prima_id,
+        cantidad_ingrediente: ing.cantidad_ingrediente,
+        unidad_id: ing.unidad_id,
+        nombre_materia_prima: ing.materia_prima?.nombre || "Desconocido"
+      }));
+    } catch (error) {
+      console.error("Error al cargar ingredientes", error);
+    }
+  }
 
- productoSeleccionado.value = producto;
+  for(const campo in camposModificados.value) {
+    camposModificados.value[campo] = false;
+  }
+
+  productoSeleccionado.value = producto;
   ActModal.value = true;
 } 
 
-const closeActModal = (producto: any) => {
+const closeActModal = () => {
   ActModal.value = false;
 } 
-
-
 
 const closeModal = () => {
   emit('close');  // Emitir el evento para cerrar el modal
 };
 
+// Obtener el nombre de la materia prima por ID
+const getNombreMateriaPrima = (id) => {
+  const materiaPrima = materiasPrimas.value.find(mp => mp.id === id);
+  return materiaPrima ? materiaPrima.nombre : "Desconocido";
+}
+
+// Obtener el nombre de la unidad por ID
+const getNombreUnidad = (id) => {
+  const unidad = unidadesMedida.value.find(u => u.id === id);
+  return unidad ? unidad.nombre : "Unidad por defecto";
+}
+
+// Observar cambios en el tipo
+watch(() => formData.value.tipo, (newValue, oldValue) => {
+  if (newValue !== oldValue) {
+    handleInputChange('tipo');
+    // Si cambiamos de HECHO a otra tipo, podemos limpiar los ingredientes
+    if (newValue !== "HECHO") {
+      formData.value.ingredientes = [];
+    }
+  }
+});
 </script>
 
 <template>
@@ -178,18 +294,19 @@ const closeModal = () => {
           <div class="productos-info">
             <h4>{{ productos.nombre }}</h4>
             <p v-if="productos.cantidad">Stock: {{ productos.cantidad }}</p>
-            
-        </div>
+            <p><strong>Categoría:</strong> {{ productos.categoria }}</p>
+            <p><strong>Tipo:</strong> {{ productos.tipo }}</p>
+          </div>
         
-        <button 
+          <button 
             @click="openActModal(productos)"
             class="btn-agregar-productos">Actualizar
           </button>
-          </div>
+        </div>
       </div>
 
       <div v-if="filtrarProductos.length === 0" class="no-results">
-        No se encontraron resultados con la busqueda
+        No se encontraron resultados con la búsqueda
       </div>
 
       <div class="modal-footer">
@@ -199,7 +316,8 @@ const closeModal = () => {
 
     <div class="modal-overlay" v-if="ActModal">
       <div class="form-container">
-      <button @click="closeActModal" class="close-btn4">X</button>
+        <button @click="closeActModal" class="close-btn4">X</button>
+      <h1>Ingrese los datos a Actualizar</h1>
 
         <form @submit.prevent="handleSubmit">
           <label for="id">ID del Producto:</label>
@@ -213,14 +331,21 @@ const closeModal = () => {
           <input type="text" id="nombre" v-model="formData.nombre" placeholder="Ingrese el nombre del producto" @input="handleInputChange('nombre')"/>
 
           <label for="categoria">Categoría:</label>
-          <select id="categoria" v-model="formData.categoria" @input="handleInputChange('categoria')">7
+          <select id="categoria" v-model="formData.categoria" @change="handleInputChange('categoria')">
             <option disabled value="">Seleccione una Categoría</option>
             <option v-for="categoria in categorias" :key="categoria" :value="categoria">
               {{ categoria }}
             </option>
-            
           </select>
-          <label for="precio">Precio</label>
+          
+          <label for="tipo">Tipo:</label>
+          <select id="tipo" v-model="formData.tipo" @change="handleInputChange('tipo')">
+            <option v-for="tipo in tipos" :key="tipo" :value="tipo">
+              {{ tipo }}
+            </option>
+          </select>
+          
+          <label for="precio">Precio:</label>
           <input type="number" id="precio" v-model="formData.precio" step="0.01" placeholder="Ingrese el precio" 
             @input="handleInputChange('precio')"
           />
@@ -228,12 +353,70 @@ const closeModal = () => {
           <label for="cantidad">Cantidad:</label>
           <input type="number" id="cantidad" v-model.number="formData.cantidad" placeholder="Ingrese la cantidad" @input="handleInputChange('cantidad')"/>
 
-          
-          <label for="stock_minimo">Cantidad minimo de stock:</label>
-          <input type="text" id="stock_minimo" v-model="formData.stock_minimo" placeholder="Ingrese una descripción corta" @input="handleInputChange('stock_minimo')"/>
+          <label for="stock_minimo">Cantidad mínimo de stock:</label>
+          <input type="text" id="stock_minimo" v-model="formData.stock_minimo" placeholder="Ingrese el stock mínimo" @input="handleInputChange('stock_minimo')"/>
 
           <label for="id_usuario">ID Usuario:</label>
           <input type="number" id="id_usuario" v-model="formData.idUsuarioR" placeholder="Ingrese el ID del usuario que Actualiza" disabled/>
+
+          <!-- Sección de ingredientes para productos HECHO -->
+          <div v-if="mostrarReceta" class="ingredientes-seccion">
+            <h3>Ingredientes de la Receta</h3>
+            
+            <div v-for="(ingrediente, index) in formData.ingredientes" :key="index" class="ingrediente-item">
+              <div class="ingrediente-row">
+                <label>Materia Prima:</label>
+                <select 
+                  v-model="ingrediente.materia_prima_id" 
+                  @change="handleIngredienteChange"
+                  class="ingrediente-select"
+                >
+                  <option value="">Seleccione una materia prima</option>
+                  <option v-for="mp in materiasPrimas" :key="mp.id" :value="mp.id">
+                    {{ mp.nombre }}
+                  </option>
+                </select>
+                
+                <label>Cantidad:</label>
+                <input 
+                  type="number" 
+                  v-model.number="ingrediente.cantidad_ingrediente" 
+                  @input="handleIngredienteChange"
+                  step="0.01"
+                  min="0"
+                  class="ingrediente-input"
+                />
+                
+                <label>Unidad:</label>
+                <select 
+                  v-model="ingrediente.unidad_id" 
+                  @change="handleIngredienteChange"
+                  class="ingrediente-select"
+                >
+                  <option :value="null">Usar unidad de materia prima</option>
+                  <option v-for="um in unidadesMedida" :key="um.id" :value="um.id">
+                    {{ um.nombre }} ({{ um.simbolo }})
+                  </option>
+                </select>
+                
+                <button 
+                  type="button" 
+                  @click="eliminarIngrediente(index)"
+                  class="btn-eliminar-ingrediente"
+                >
+                  Eliminar
+                </button>
+              </div>
+            </div>
+            
+            <button 
+              type="button" 
+              @click="agregarIngrediente"
+              class="btn-agregar-ingrediente"
+            >
+              Agregar Ingrediente
+            </button>
+          </div>
 
           <button type="submit" class="act-bottom">Actualizar</button>
         </form>
@@ -250,12 +433,70 @@ h1{
   color: #ffd700;
   margin-left: 20px;
 }
+.ingredientes-seccion {
+  font-family: 'Jura', sans-serif;
+  margin-top: 20px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  padding: 15px;
+  background-color: #000000;
+}
+.ingrediente-item {
+  margin-bottom: 15px;
+  padding-bottom: 15px;
+  border-bottom: 1px dashed #ccc;
+}
+
+.ingrediente-row {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 10px;
+  align-items: center;
+}
+.ingrediente-select, .ingrediente-input {
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  width: 90%;
+}
+
+.btn-eliminar-ingrediente {
+  background-color: #ff5252;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-top: 5px;
+  transition: all 0.1s ease-in-out;
+}
+.btn-agregar-ingrediente {
+  background-color: #faad14;
+  color: white;
+  border: none;
+  padding: 8px 15px;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-top: 10px;
+  transition: all 0.1s ease-in-out;
+}
+
+.btn-eliminar-ingrediente:hover{
+  transform: translateY(-3px) ;
+  background-color: #c53436;
+
+}
+.btn-agregar-ingrediente:hover{
+  transform: translateY(-3px);
+  background-color: #A65814;
+}
+
 /* Estilo del formulario */
 .form-container {
   background-color: #000000; /* Fondo negro */
   padding: 15px;
   width: 700px;
-  height: 585px;
+  height: auto;
   margin-top: 40px;
   border-radius: 8px;
   margin-left: 435.5px;
@@ -331,6 +572,7 @@ input::placeholder {
   transform: scale(1.05);
 }
 .modal-overlay {
+  overflow-y: auto; /* Activa el scroll vertical */
   text-align: center;
   position: fixed;
   top: 0;
@@ -346,7 +588,7 @@ input::placeholder {
   width: 50%;
   height: 95%;
   background-color: rgb(0, 0, 0);
-    margin-top: 20px;
+  margin-top: 20px;
   transition: all 0.3s ease;
   border: solid #cf9b00;
   border-radius: 5%;

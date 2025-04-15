@@ -5,13 +5,17 @@ import axios from 'axios';
 import ComImagen from './icons/IMGENES/ComImagen.vue';
 import ComAgregarP from './ComAgregarP.vue';
 import ComActP from './ComActP.vue';
-import ComConsulPro from './ComConsulPro.vue';
 import { useRouter } from 'vue-router';
-import ComConsulProPre from './ComConsulProPre.vue';
 // Libreria para el icono de busqueda
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
 import { faSearch, faExclamationTriangle,faArrowLeft, faMinusCircle, faTimes } from '@fortawesome/free-solid-svg-icons';
 
+//funcion para boton para volver entre paginas
+const router = useRouter();
+
+const volver = () => {
+  router.go(-1)
+}
 
 // Variable para almacenar datos de la busqueda de productos
 const searchTerm = ref("")
@@ -27,24 +31,58 @@ const productoSeleccionado = ref({});
 
 //configuaracion de alertas stock
 const umbralAgotado = ref(0);
-const umbralProximoAgotar = ref(null);
+const umbralProximoAgotar = ref(0);
 
-watchEffect(() => {
-  if(productos.value.length > 0){
-    umbralProximoAgotar.value = productos.value.map(p=>p.stock_minimo);
-  }
-})
-
-//funcion para boton para volver entre paginas
-const router = useRouter();
-
-const volver = () => {
-  router.go(-1)
-}
+// Estado para el usuario actual y su rol
+const currentUser = ref(null);
+const userRole = ref('');
 
 //estado para el panel de alertas
 const mostarPanelAlertas = ref(false);
 const panelAlertasMinimizado = ref(false);
+
+// Constantes para roles
+const ROLES = {
+  JEFE: 'JEFE',
+  ADMINISTRADOR: 'ADMINISTRADOR',
+  EMPLEADO: 'EMPLEADO'
+};
+
+// Verificar permisos según el rol
+const hasPermission = (allowedRoles) => {
+  return allowedRoles.includes(userRole.value);
+}
+
+// Cargar datos del usuario al iniciar el componente
+const loadUserData = async () => {
+  try {
+    const token = localStorage.getItem("jwtToken");
+    if (!token) return null;
+
+    const response = await axios.get("http://127.0.0.1:8000/usuarios/me", {
+      headers: {
+        Authorization: `Bearer ${token}`, 
+      },
+    });
+    currentUser.value = response.data;
+    userRole.value = response.data.rol; // Asumiendo que el rol viene en response.data.rol
+  } catch (error) {
+    console.error("Error obteniendo usuario:", error);
+    // Redirigir al login si no hay usuario válido
+    // window.location.href = '/login';
+  }
+};
+
+
+
+watchEffect(() => {
+  if(productos.value.length > 0){
+    umbralProximoAgotar.value = Math.min(...productos.value.map(p => p.stock_minimo))
+  }
+})
+
+
+
 
 
 const cargarEmpleados = async () => {
@@ -86,7 +124,7 @@ const verificarALertasProductos = async () => {
 
     //con los mensajes emergentes se le notifica al usuarios, solo la primera vez
 
-    if(localStorage.getItem('alertasStockMostradas')){
+    if(!localStorage.getItem('alertasStockMostradas')){
       let mensaje = '';
 
       if(productosAgotados.length>0){
@@ -121,6 +159,8 @@ const verificarALertasProductos = async () => {
     }
   }
 };
+
+verificarALertasProductos()
 
 const productosAgotados =computed(()=>{
   return productos.value.filter(p=>p.cantidad<=umbralAgotado.value);
@@ -206,6 +246,15 @@ const closeEmergente = () => {
 }
 
 const openAct = () => {
+     // Verificar si el usuario tiene permisos para actualizar
+     if (!hasPermission([ROLES.JEFE, ROLES.ADMINISTRADOR])) {
+    Swal.fire({
+      icon: 'error',
+      title: 'Acceso denegado',
+      text: 'No tienes permisos para agregar materia prima.'
+    });
+    return;
+  }
   ActualizarProducto.value = true;
    // Usamos esto para evitar scroll en el body principal
    document.documentElement.style.overflow = "hidden";
@@ -222,6 +271,15 @@ cargarProductos();
 }
 
 const openAdd = () => {
+     // Verificar si el usuario tiene permisos para agregar
+     if (!hasPermission([ROLES.JEFE, ROLES.ADMINISTRADOR])) {
+    Swal.fire({
+      icon: 'error',
+      title: 'Acceso denegado',
+      text: 'No tienes permisos para agregar materia prima.'
+    });
+    return;
+  }
   AgregarProducto.value = true;
   // Usamos esto para evitar scroll en el body principal
   document.documentElement.style.overflow = "hidden";
@@ -258,9 +316,13 @@ const cerrarPanelAlertas = () => {
  mostarPanelAlertas.value = false
 }
 
-onMounted(()=>{
-  cargarProductos();
-})
+
+
+// Cargar datos al montar el componente
+onMounted(async () => {
+  await loadUserData();
+  await cargarProductos();
+});
 
 watch(productos, () => {
   verificarALertasProductos();
@@ -281,9 +343,9 @@ cargarProductos();
   <h1 id="panel">Panel Productos</h1>
   <hr id="l3" />
   <div class="button-container">
-      <button @click="openAdd" class="custom-button">Agregar Producto</button>
-      <button @click="openAct" class="custom-button">Actualizar Producto</button>
-      <button @click="openCons" class="custom-button">Consultar Producto</button>
+      <button @click="openAdd"  v-if="hasPermission([ROLES.JEFE, ROLES.ADMINISTRADOR])"  class="custom-button">Agregar Producto</button>
+      <button @click="openAct"  v-if="hasPermission([ROLES.JEFE, ROLES.ADMINISTRADOR])"  class="custom-button">Actualizar Producto</button>
+      
   </div>
 
   
@@ -327,19 +389,21 @@ cargarProductos();
             </li>
           </ul>
         </div>
-      </div>
 
-      <div v-if="productosProximosAgotarse.length > 0" class="alerta-seccion alerta-proximo">
+        <div v-if="productosProximosAgotarse.length > 0" class="alerta-seccion alerta-proximo">
         <h5>Productos proximo a Agotarse ({{ productosProximosAgotarse.length }})</h5>
         <ul class="alerta-lista">
           <li v-for="producto in productosProximosAgotarse" :key="producto.id" class="alerta-item">
             <span class="producto-nombre">{{ producto.nombre }}</span>
-            <span class="stock-actual">{{ producto.canitidad }}</span>
+            <span class="stock-actual">{{ producto.cantidad }}</span>
             <button class="btn-accion-alerta" @click="openEmergente(producto)">Ver</button>
             <button class="btn-accion-alerta" @click="openAct">Actualizar</button>
           </li>
         </ul>
       </div>
+      </div>
+
+      
     </div>
   </transition>
   
@@ -358,7 +422,7 @@ cargarProductos();
           <p>Cantidad: <span class="product-quantity">{{ producto.cantidad }}</span></p>
         </div>
         <div class="info-right">
-          <p>Precio: <span class="product-price">${{ producto.precio_unitario }}</span></p>
+          <p>Precio: <span class="product-price">${{ producto.precio_salida }}</span></p>
           <p>Categoría: <span class="product-price">{{ producto.categoria }}</span></p>
         </div>  
     </div>
@@ -688,7 +752,6 @@ hr {
   height: 200px;
 
 }
-
 .no-results {
   animation: Text 0.2s ease-out forwards;
 }

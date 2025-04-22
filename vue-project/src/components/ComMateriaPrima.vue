@@ -534,7 +534,7 @@ const volver = () => {
   </div>
 
   <footer>
-    <p>&copy; 2024</p>
+    <p>&copy; 2025</p>
   </footer>
 </template>
 
@@ -1075,6 +1075,16 @@ hr {
   .ComImagen {
     margin-left: 0 !important;
     max-width: 80%;
+    margin-top: 70px;
+  }
+
+  .panels-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .panel-card {
+    width: 80%;
+    margin: 10px auto;
   }
   
   .container-buttom-come-back {

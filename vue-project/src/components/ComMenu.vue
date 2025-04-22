@@ -659,7 +659,7 @@ window.addEventListener("scroll", () => {
 
 
 <footer>
-    <p>&copy; 2024 </p>
+    <p>&copy; 2025 </p>
       
   <ul class="wrapper">
 

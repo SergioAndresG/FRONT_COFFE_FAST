@@ -200,7 +200,6 @@ onMounted(() => {
   
   .info {
     font-family: 'Jura', sans-serif;
-
     background-color: #e2f3f8;
     color: #0c5460;
   }
@@ -223,7 +222,7 @@ onMounted(() => {
   a {
     font-family: 'Jura', sans-serif;
 
-    color: #007bff;
+    color: #938e2c;
     text-decoration: none;
   }
   

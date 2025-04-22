@@ -80,42 +80,49 @@ const actualizarClose = async () => {
    <p id="jefe-name">{{ usuario.nombre }}</p>
    <ActulizacionPerfil v-if="isModalOpen" @close="actualizarClose"/>
  </div>
-  <section id="c">
-    <div class="nosotros-banner">
-      <h2>Configuraciones</h2>
-    </div>
+ <section id="c">
+  <div class="nosotros-banner">
+    <h2>Configuraciones</h2>
+  </div>
 
-    <div class="alert-config-container">
+  <div class="panels-grid">
+    <div class="panel-card">
       <i class="fas fa-box-open panel-icon"></i>
-       <h1 class="alert-config-title">Panel de Materia Prima</h1>
-       <button class="alert-config-button"><a href="/Materia">Ver mas <i class="fas fa-arrow-right" style="margin-left: 12px;"></i></a></button>
+      <h1 class="alert-config-title">Panel de MateriaP</h1>
+      <button class="alert-config-button"><a href="/Materia">Ver más <i class="fas fa-arrow-right" style="margin-left: 12px;"></i></a></button>
     </div>
-    <div class="alert-config-container2">
+    
+    <div class="panel-card">
       <i class="fas fa-tags panel-icon"></i>
-       <h1 class="alert-config-title">Panel de Productos</h1>
-       <button class="alert-config-button"><a href="/Productos">Ver mas <i class="fas fa-arrow-right" style="margin-left: 12px;"></i></a></button>
+      <h1 class="alert-config-title">Panel de Productos</h1>
+      <button class="alert-config-button"><a href="/Productos">Ver más <i class="fas fa-arrow-right" style="margin-left: 12px;"></i></a></button>
     </div>
-    <div class="alert-config-container3">
+    
+    <div class="panel-card">
       <i class="fas fa-users panel-icon"></i>
-        <h1 class="alert-config-title">Panel Usuarios</h1>
-        <button class="alert-config-button"><a href="/Gest">Ver mas <i class="fas fa-arrow-right" style="margin-left: 12px;"></i></a></button>
+      <h1 class="alert-config-title">Panel Usuarios</h1>
+      <button class="alert-config-button"><a href="/Gest">Ver más <i class="fas fa-arrow-right" style="margin-left: 12px;"></i></a></button>
     </div>
-    <div class="alert-config-container4">
+    
+    <div class="panel-card">
       <i class="fas fa-file-invoice-dollar panel-icon"></i>
-        <h1 class="alert-config-title">Panel Facturas</h1>
-        <button class="alert-config-button"><a href="Facturas">Ver mas <i class="fas fa-arrow-right" style="margin-left: 12px;"></i></a></button>
+      <h1 class="alert-config-title">Panel Facturas</h1>
+      <button class="alert-config-button"><a href="Facturas">Ver más <i class="fas fa-arrow-right" style="margin-left: 12px;"></i></a></button>
     </div>
-    <div class="alert-config-container5">
+    
+    <div class="panel-card">
       <i class="fas fa-clipboard-list panel-icon"></i>
-        <h1 class="alert-config-title">Panel Pedidos</h1>
-        <button class="alert-config-button"><a href="/Pedidos">Ver mas <i class="fas fa-arrow-right" style="margin-left: 12px;"></i></a></button>
+      <h1 class="alert-config-title">Panel Pedidos</h1>
+      <button class="alert-config-button"><a href="/Pedidos">Ver más <i class="fas fa-arrow-right" style="margin-left: 12px;"></i></a></button>
     </div>
-    <div class="alert-config-container6">
-      <i class="fa-solid fa-paste"></i><br>
-        <h1 class="alert-config-title">Menu</h1>
-        <button class="alert-config-button"><a href="/Menu">Ver mas <i class="fas fa-arrow-right" style="margin-left: 12px;"></i></a></button>
+    
+    <div class="panel-card">
+      <i class="fa-solid fa-paste panel-icon"></i>
+      <h1 class="alert-config-title">Menu</h1>
+      <button class="alert-config-button"><a href="/Menu">Ver más <i class="fas fa-arrow-right" style="margin-left: 12px;"></i></a></button>
     </div>
-  </section>
+  </div>
+</section>
   <div class="buttom-container">
     <button @click="actualizar" class="buttom-perfil">Ver Perfil</button>
    </div>
@@ -208,6 +215,32 @@ hr {
   border: 1px solid #D9AB23; 
   margin-top: -80px;
 }
+.panel-card {
+  background-color: #D9AB23; 
+  padding: 20px;
+  border-radius: 30px; 
+  text-align: center; 
+  width: 150px; 
+  height: 170px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  margin-left: 50px;
+}
+
+.panels-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.panel-icon {
+  font-size: 2rem;
+  color: white;
+  margin-bottom: 10px;
+}
 .nosotros-banner {
   width: 100%;
   background-color: #d9ab23be;
@@ -265,6 +298,9 @@ hr {
   text-decoration: none;
   color: white;
 }
+
+
+
 .button-container2 button:hover {
     background-color: #f2d2d0;
     color: black
@@ -539,6 +575,27 @@ footer {
     margin-top: 2rem;
     padding: auto;
   }
+  .panels-grid {
+    grid-template-columns: 1fr; 
+    gap: 15px;
+    margin-top: 20px;
+  }
+  
+  .panel-card {
+    width: 80%; 
+    margin: 0 auto; 
+    height: auto; 
+    padding: 15px;
+  }
+
+  .alert-config-button {
+    width: 180px;
+    margin-left: 14px;
+  font-size: 16px;
+  cursor: pointer;
+  }
+
+
 
   #main-container{
     display: none;

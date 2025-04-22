@@ -23,7 +23,7 @@ axios.interceptors.request.use(config => {
 const validarUsuario = async () => {
   try {
     // Llamada al endpoint de login
-    const respuesta = await axios.post("http://coffebikefastapi-production.up.railway.app/login", {
+    const respuesta = await axios.post("https://coffebikefastapi-production.up.railway.app/login", {
         nombre: nombre.value,
         contraseña: contraseña.value,
         },

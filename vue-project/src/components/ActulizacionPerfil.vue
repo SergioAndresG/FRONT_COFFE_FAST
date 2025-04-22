@@ -72,7 +72,7 @@ const updateProfile = async () => {
     }
 
     const response = await axios.patch(
-      `http://localhost/usuarios/${user.value.id}`, 
+      `https://coffebikefastapi-production.up.railway.app/usuarios/${user.value.id}`, 
       payload
     );
 
@@ -111,7 +111,7 @@ const handleImageUpload = async (event) => {
 
     try {
       const response = await axios.post(
-        `http://localhost:8000/usuarios/imagen/${user.value.id}`, 
+        `https://coffebikefastapi-production.up.railway.app/usuarios/imagen/${user.value.id}`, 
         formData,
         {
           headers: {

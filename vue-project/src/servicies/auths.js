@@ -6,7 +6,7 @@ export const getCurrentUser = async () => {
       const token = localStorage.getItem("jwtToken");
       if (!token) return null;
   
-      const response = await axios.get("http://localhost:8000/usuarios/me", {
+      const response = await axios.get("https://coffebikefastapi-production.up.railway.app/usuarios/me", {
         headers: {
           Authorization: `Bearer ${token}`, 
         },

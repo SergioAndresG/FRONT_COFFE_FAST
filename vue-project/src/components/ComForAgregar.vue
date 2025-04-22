@@ -72,7 +72,7 @@ const handleSubmit = async (): Promise<void> => {
         }
 
         // Realizar la solicitud POST al backend
-        const response = await axios.post("http://127.0.0.1:8000/usuarios", data, {
+        const response = await axios.post("https://coffebikefastapi-production.up.railway.app/usuarios", data, {
             headers: {
                 "Content-Type": "multipart/form-data"
             }

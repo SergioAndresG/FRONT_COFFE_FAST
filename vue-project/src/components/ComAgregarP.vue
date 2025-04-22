@@ -51,7 +51,7 @@ watch(() => formData.value.tipo, (newValue) => {
 
 const cargarProductos = async () => {
   try {
-    const respuesta = await axios.get("http://127.0.0.1:8000/productos")
+    const respuesta = await axios.get("https://coffebikefastapi-production.up.railway.app/productos")
     productos.value = respuesta.data
   } catch (error) {
     console.error("Error al cargar los produtos", error)
@@ -62,7 +62,7 @@ cargarProductos();
 
 const cargarCategorias = async () => {
   try {
-    const respuesta = await axios.get("http://127.0.0.1:8000/productos/categorias")
+    const respuesta = await axios.get("https://coffebikefastapi-production.up.railway.app/productos/categorias")
     categorias.value = respuesta.data
   } catch (error) {
     console.error("Error al cargar los produtos", error)
@@ -75,7 +75,7 @@ cargarProductos();
 
 const cargarMateria = async () => {
   try {
-    const respuesta = await axios.get("http://127.0.0.1:8000/materia");
+    const respuesta = await axios.get("https://coffebikefastapi-production.up.railway.app/materia");
     ingredientes.value = respuesta.data;  
   } catch (error) {
     console.error("Error al cargar la materia prima");
@@ -86,7 +86,7 @@ cargarMateria();
 
 const cargarUnidadMedida = async () => {
   try {
-    const respuesta = await axios.get("http://127.0.0.1:8000/materia/unidades-medida");
+    const respuesta = await axios.get("https://coffebikefastapi-production.up.railway.app/materia/unidades-medida");
     unidades.value = respuesta.data;
   } catch (error) {
     console.error("Error al cargar las unidades de medida");
@@ -97,7 +97,7 @@ cargarUnidadMedida();
 
 const cargarEmpleados = async () => {
   try {
-    const respuesta = await axios.get("http://127.0.0.1:8000/usuarios");
+    const respuesta = await axios.get("https://coffebikefastapi-production.up.railway.app/usuarios");
     usuario.value = respuesta.data;  
   } catch (error) {
     console.error("Error al cargar los usuarios");
@@ -288,7 +288,7 @@ const handleSubmit = async () => {
     }
 
     // Realizar la solicitud POST al backend
-    const response = await axios.post("http://127.0.0.1:8000/productos", form, {
+    const response = await axios.post("https://coffebikefastapi-production.up.railway.app/productos", form, {
       headers: {
         "Content-Type": "multipart/form-data",
       },
@@ -475,7 +475,7 @@ const closeModal = () => {
               <div class="ingredientes-grid">
                 <div v-for="ingrediente in filteredIngredientes" :key="ingrediente.id" class="ingrediente-card">
                   <div class="ingrediente-imagen">
-                    <img v-if="ingrediente.ruta_imagen" :src="`http://127.0.0.1:8000/materia/${ingrediente.ruta_imagen}`" />
+                    <img v-if="ingrediente.ruta_imagen" :src="`https://coffebikefastapi-production.up.railway.app/materia/${ingrediente.ruta_imagen}`" />
                   </div>
                   <div class="ingrediente-info">
                     <h4>{{ ingrediente.nombre }}</h4>

@@ -59,7 +59,7 @@ const loadUserData = async () => {
     const token = localStorage.getItem("jwtToken");
     if (!token) return null;
 
-    const response = await axios.get("http://127.0.0.1:8000/usuarios/me", {
+    const response = await axios.get("https://coffebikefastapi-production.up.railway.app/usuarios/me", {
       headers: {
         Authorization: `Bearer ${token}`, 
       },
@@ -87,7 +87,7 @@ watchEffect(() => {
 
 const cargarEmpleados = async () => {
   try {
-    const empleados = await axios.get("http://127.0.0.1:8000/usuarios");
+    const empleados = await axios.get("https://coffebikefastapi-production.up.railway.app/usuarios");
     empleado.value = empleados.data; // Asignamos los datos del empleado
 
     // Se busca el usuario con el rol de Jefe
@@ -105,7 +105,7 @@ const cargarEmpleados = async () => {
 
 const cargarProductos = async () => {
   try {
-    const respuesta = await axios.get("http://127.0.0.1:8000/productos"); 
+    const respuesta = await axios.get("https://coffebikefastapi-production.up.railway.app/productos"); 
     productos.value = respuesta.data; // Asigna los datos de la respuesta
   } catch (error) {
     console.error("Error al cargar productos:", error);
@@ -198,7 +198,7 @@ const eliminarProducto = async (idProducto: number) => {
   console.log(typeof contraseñaProporcionada)
 
     // Realizar la solicitud DELETE al backend
-    const response = await axios.delete("http://127.0.0.1:8000/productos/eliminar", {
+    const response = await axios.delete("https://coffebikefastapi-production.up.railway.app/productos/eliminar", {
       data: eliminarProductoDTO,  // Enviar el DTO en el cuerpo de la solicitud
       headers: {
         "Content-Type": "application/json"
@@ -413,7 +413,7 @@ cargarProductos();
   <transition-group name="fade" tag="div" class="product-container">
   <div class="card2" v-for="producto in filtrarProductos" :key="producto.id">
     <div class="product-image">
-      <img v-if="producto.ruta_imagen" :src="`http://127.0.0.1:8000/productos/${producto.ruta_imagen}`" class="product-image" />
+      <img v-if="producto.ruta_imagen" :src="`https://coffebikefastapi-production.up.railway.app/productos/${producto.ruta_imagen}`" class="product-image" />
         <span v-else>{{ producto.imagen }}</span>
     </div>
     <div class="product-info">
@@ -442,7 +442,7 @@ cargarProductos();
   <div v-if="emergenteMasInformacion" class="moreInfo" @click.self="closeEmergente"> <!-- .self se para que si se da click por accidente no se cierre la ventana -->
     <div class="cardInfo">
         <div class="moreInfoImage">
-          <img v-if="productoSeleccionado.ruta_imagen" :src="`http://127.0.0.1:8000/productos/${productoSeleccionado.ruta_imagen}`" class="product-image" />
+          <img v-if="productoSeleccionado.ruta_imagen" :src="`https://coffebikefastapi-production.up.railway.app/productos/${productoSeleccionado.ruta_imagen}`" class="product-image" />
         </div>
         <div class="container-info">
           <p>ID: <span class="product-id">{{ productoSeleccionado.id }}</span></p>

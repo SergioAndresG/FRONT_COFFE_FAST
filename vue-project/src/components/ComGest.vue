@@ -16,7 +16,7 @@ const searchTerm = ref("");
 const router = useRouter();
 
 const volver = () => {
-  router.go(-1);
+  router.back();
 };
 
 const filtrarProductos = computed (()=> {
@@ -110,7 +110,7 @@ cargarEmpleados();
   <transition-group name="fade" tag="div" class="empleado-container">
   <div class="card2" v-for="empleado in filtrarProductos" :key="empleado.id">
     <div class="empleado-image">
-      <img v-if="empleado.ruta_imagen" :src="`http://127.0.0.1:8000/usuarios/${empleado.ruta_imagen}`" class="empleado-image" />
+      <img v-if="empleado.ruta_imagen" :src="`https://coffebikefastapi-production.up.railway.app/usuarios/${empleado.ruta_imagen}`" class="empleado-image" />
         <span v-else>{{ empleado.imagen }}</span>
     </div>
     <div class="empleado-info">

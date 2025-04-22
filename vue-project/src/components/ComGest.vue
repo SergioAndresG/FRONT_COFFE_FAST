@@ -32,7 +32,7 @@ const filtrarProductos = computed (()=> {
 // Función para cargar empleados desde el backend
 const cargarEmpleados = async () => {
   try {
-    const respuesta = await axios.get("http://127.0.0.1:8000/usuarios");
+    const respuesta = await axios.get("https://coffebikefastapi-production.up.railway.app/usuarios");
     empleados.value = respuesta.data.map(empleado => ({
       ...empleado,
     }));

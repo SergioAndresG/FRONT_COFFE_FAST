@@ -63,7 +63,7 @@ const loadUserData = async () => {
     const token = localStorage.getItem("jwtToken");
     if (!token) return null;
 
-    const response = await axios.get("http://127.0.0.1:8000/usuarios/me", {
+    const response = await axios.get("https://coffebikefastapi-production.up.railway.app/usuarios/me", {
       headers: {
         Authorization: `Bearer ${token}`, 
       },
@@ -86,7 +86,7 @@ const materiaStockSeleccionada = ref(null);
 
 const cargarEmpleados = async () => {
   try {
-    const empleados = await axios.get("http://127.0.0.1:8000/usuarios");
+    const empleados = await axios.get("https://coffebikefastapi-production.up.railway.app/usuarios");
     empleado.value = empleados.data; // Asignamos los datos del empleado
 
     // Se busca el usuario con el rol de Jefe
@@ -104,7 +104,7 @@ const cargarEmpleados = async () => {
 // Cargar materias primas desde la API
 const cargarMateriasPrimas = async () => {
   try {
-    const respuesta = await axios.get("http://127.0.0.1:8000/materia");
+    const respuesta = await axios.get("https://coffebikefastapi-production.up.railway.app/materia");
     materiasPrimas.value = respuesta.data;
   } catch (error) {
     console.error("Error al cargar materias primas:", error);

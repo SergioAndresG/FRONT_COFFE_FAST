@@ -97,7 +97,7 @@ const actualizarClose = async () => {
     <div class="alert-config-container4">
       <i class="fas fa-file-invoice-dollar panel-icon"></i>
         <h1 class="alert-config-title">Panel Facturas</h1>
-        <button class="alert-config-button"><a href="/Pedidos">Ver mas <i class="fas fa-arrow-right" style="margin-left: 12px;"></i></a></button>
+        <button class="alert-config-button"><a href="/Facturas">Ver mas <i class="fas fa-arrow-right" style="margin-left: 12px;"></i></a></button>
     </div>
     <div class="alert-config-container5">
       <i class="fas fa-clipboard-list panel-icon"></i>

@@ -462,7 +462,6 @@ const closeModal = () => {
                       </td>
                       <td>{{ ing.cantidad }}</td>
                       <td>{{ ing.unidad }}</td>
-                      <td>{{ }}</td>
 
                       <td>
                         <button @click="openCantidadModal(ing)" class="btn-edit">Editar</button>
@@ -480,7 +479,7 @@ const closeModal = () => {
                   </div>
                   <div class="ingrediente-info">
                     <h4>{{ ingrediente.nombre }}</h4>
-                    <p v-if="ingrediente.cantidad">Stock: {{ ingrediente.cantidad }} {{ ingrediente.unidad_id.simbolo }}</p>
+                    <p v-if="ingrediente.cantidad">Stock: {{ ingrediente.cantidad }} {{ ingrediente.unidad.simbolo }}</p>
                   </div>
                   <button 
                     @click="openCantidadModal(ingrediente)" 

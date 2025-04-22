@@ -113,7 +113,7 @@ export default {
       }
 
       try {
-        const response = await axios.get(`http://localhost:8000/api/facturas/por-fecha`, {
+        const response = await axios.get(`http://127.0.0.1:8000/facturas/por-fecha`, {
           params: { fecha: this.fechaBusqueda }
         });
 

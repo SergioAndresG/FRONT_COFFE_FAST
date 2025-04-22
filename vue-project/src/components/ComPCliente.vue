@@ -141,7 +141,7 @@ const cargarDetallePedido = async (id: string) => {
       pedidoActual.value = response.data.productos.map((item: any) => ({
         id: item.producto_id,
         nombre: item.producto_nombre || `Producto ${item.producto_id}`,
-        precio: item.precio_unitario || 0,
+        precio: item.precio_salida || 0,
         cantidad: item.cantidad
       }))
       
@@ -480,10 +480,10 @@ const cancelarPedido = async () => {
                     Última actualización: {{ new Date(estadoVista.ultimaActualizacion).toLocaleTimeString() }}
                 </span>
             </div>
-            <button 
+            <button
                 class="btn-cancelar"
                 @click="cancelarPedido"
-                :disabled="!pedidoId || cargando">
+                :disabled="!pedidoId || cargando || estadoVista.ultimoEstado == 'en_proceso' || estadoVista.ultimoEstado == 'completado'">
                 <i class="fas fa-times-circle"></i> Cancelar Pedido
             </button>
         </div>

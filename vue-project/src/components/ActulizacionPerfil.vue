@@ -72,7 +72,7 @@ const updateProfile = async () => {
     }
 
     const response = await axios.patch(
-      `http://127.0.0.1:8000/usuarios/${user.value.id}`, 
+      `http://localhost/usuarios/${user.value.id}`, 
       payload
     );
 
@@ -111,7 +111,7 @@ const handleImageUpload = async (event) => {
 
     try {
       const response = await axios.post(
-        `http://127.0.0.1:8000/usuarios/imagen/${user.value.id}`, 
+        `http://localhost:8000/usuarios/imagen/${user.value.id}`, 
         formData,
         {
           headers: {

@@ -512,7 +512,7 @@ onMounted(() => {
                 
                 <div class="pedido-productos" >
                   <div v-for="(producto, index) in pedido.productos" :key="index" class="producto-item">
-                     (x{{ producto.cantidad }}) - ${{ producto.precio_unitario * producto.cantidad }} {{ producto.nombre }}
+                    {{ producto.nombre }} (x{{ producto.cantidad }}) - ${{ producto.precio_unitario * producto.cantidad }} 
                   </div>
                 </div>
                 

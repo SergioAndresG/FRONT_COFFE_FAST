@@ -201,7 +201,7 @@ const closeModal = () => {
           </div>
           <div class="productos-info">
           <h4>{{ materia.nombre }}</h4>
-          <p v-if="materia.cantidad">Stock: {{ materia.cantidad }}</p>
+          <p v-if="materia.cantidad">Stock: {{ materia.cantidad }} {{ materia.unidad.simbolo }}</p>
           </div>
 
           <button @click="openActModal(materia)" class="btn-agregar-productos">Actualizar</button>

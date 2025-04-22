@@ -25,7 +25,7 @@ const handleSubmit = async () => {
   }
   try {
     // Construir la URL con los parámetros de consulta
-    const response = await axios.delete("http://127.0.0.1:8000/usuarios/eliminar", {
+    const response = await axios.delete("https://coffebikefastapi-production.up.railway.app/usuarios/eliminar", {
       params: {
         nombre_usuario_a_eliminar: formData.value.nombreUsuarioAEliminar,
         contraseña_proporcionada: formData.value.contraseñaJefe,

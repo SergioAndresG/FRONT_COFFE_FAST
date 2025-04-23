@@ -78,44 +78,49 @@ const actualizarClose = async () => {
    <ActulizacionPerfil v-if="isModalOpen" @close="actualizarClose"/>
  </div>
 
-  <section id="c">
-    <div class="nosotros-banner">
-      <h2>Configuraciones</h2>
-    </div>
+ <section id="c">
+  <div class="nosotros-banner">
+    <h2>Configuraciones</h2>
+  </div>
 
-    <div class="alert-config-container">
+  <div class="cards-grid">
+    <div class="card">
       <i class="fas fa-box-open panel-icon"></i>
-       <h1 class="alert-config-title">Panel de Materia Prima</h1>
-       <button class="alert-config-button"><a href="/Materia">Ver mas <i class="fas fa-arrow-right" style="margin-left: 12px;"></i></a></button>
+      <h1 class="alert-config-title">Panel de Materia Prima</h1>
+      <button class="alert-config-button"><a href="/Materia">Ver mas <i class="fas fa-arrow-right"></i></a></button>
     </div>
-    <div class="alert-config-container2">
+    
+    <div class="card">
       <i class="fas fa-tags panel-icon"></i>
-       <h1 class="alert-config-title">Panel de Productos</h1>
-       <button class="alert-config-button"><a href="/Productos">Ver mas <i class="fas fa-arrow-right" style="margin-left: 12px;"></i></a></button>
+      <h1 class="alert-config-title">Panel de Productos</h1>
+      <button class="alert-config-button"><a href="/Productos">Ver mas <i class="fas fa-arrow-right"></i></a></button>
     </div>
-
-    <div class="alert-config-container4">
+    
+    <div class="card">
       <i class="fas fa-file-invoice-dollar panel-icon"></i>
-        <h1 class="alert-config-title">Panel Facturas</h1>
-        <button class="alert-config-button"><a href="/Pedidos">Ver mas <i class="fas fa-arrow-right" style="margin-left: 12px;"></i></a></button>
+      <h1 class="alert-config-title">Panel Facturas</h1>
+      <button class="alert-config-button"><a href="/Pedidos">Ver mas <i class="fas fa-arrow-right"></i></a></button>
     </div>
-    <div class="alert-config-container5">
+    
+    <div class="card">
       <i class="fas fa-clipboard-list panel-icon"></i>
-        <h1 class="alert-config-title">Panel Pedidos</h1>
-        <button class="alert-config-button"><a href="/Pedidos">Ver mas <i class="fas fa-arrow-right" style="margin-left: 12px;"></i></a></button>
+      <h1 class="alert-config-title">Panel Pedidos</h1>
+      <button class="alert-config-button"><a href="/Pedidos">Ver mas <i class="fas fa-arrow-right"></i></a></button>
     </div>
-    <div class="alert-config-container6">
-      <i class="fa-solid fa-paste"></i><br>
-        <h1 class="alert-config-title">Menu</h1>
-        <button class="alert-config-button"><a href="/Menu">Ver mas <i class="fas fa-arrow-right" style="margin-left: 12px;"></i></a></button>
+    
+    <div class="card">
+      <i class="fa-solid fa-paste panel-icon"></i>
+      <h1 class="alert-config-title">Menu</h1>
+      <button class="alert-config-button"><a href="/Menu">Ver mas <i class="fas fa-arrow-right"></i></a></button>
     </div>
-  </section>
+  </div>
+</section>
   <div class="buttom-container">
     <button @click="actualizar" class="buttom-perfil">Ver Perfil</button>
    </div>
 
   <footer>
-      <p>&copy; 2025</p>  
+      <p class="foot">&copy; 2025</p>  
   </footer>
 </template>
 
@@ -232,7 +237,7 @@ h1{
 .buttom-perfil{
   margin-top: 100px;
   background-color: #D9AB23;
-  margin-top: -45px;
+  margin-top: -55px;
   width: 105px;
   height: 34px;
   border: solid 1px #e6e6e6;
@@ -247,7 +252,7 @@ h1{
   width: 100px;
   height: 100px;
   margin-left: 225px;
-  margin-top: -145px;
+  margin-top: -195px;
   text-align: center;
 }
 #c{
@@ -258,6 +263,39 @@ h1{
   border-radius: 5px;
   border: 1px solid #D9AB23; 
   margin-top: -80px;
+}
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 25px;
+  padding: 20px;
+  justify-items: center;
+}
+
+.card {
+  background-color: #D9AB23;
+  padding: 20px;
+  border-radius: 30px;
+  text-align: center;
+  width: 100%;
+  max-width: 200px;
+  min-height: 200px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+}
+
+.panel-icon {
+  font-size: 2.5rem;
+  color: white;
+  margin-bottom: 15px;
 }
 .nosotros-banner {
   width: 100%;
@@ -407,7 +445,10 @@ footer {
   margin-top: 34px;
   font-family: 'Jura', sans-serif;
 }
-/* Media query para modo responsivo */
+.foot{
+  margin-top: 200px;
+}
+
 @media (max-width: 767px) {
   .hamburger-menu {
     display: flex;
@@ -499,7 +540,7 @@ footer {
     display: none; /* Ocultamos el botón de perfil ya que ahora está en el menú */
   }
   .logo{
-    margin-left: -53%;
+    margin-left: -140px;
     margin-top: 15%;
   }
   hr {
@@ -513,12 +554,25 @@ footer {
     width: 200px;
   }
 
-  #c{
-    margin-left: 10px;
+  #c {
     width: 80%;
-    height: 100%;
-    margin-top: 2rem;
-    padding: auto;
+    margin-top: 30px;
+    margin-left: auto;
+    margin-right: auto;
+    padding: 15px;
+  }
+  .cards-grid {
+    grid-template-columns: 1fr; /* Cambia a una sola columna */
+    gap: 15px;
+  }
+
+  .card {
+    width: 90%; 
+    margin: 0 auto; 
+    height: auto; /* Altura automática según contenido */
+    min-height: 180px;
+    padding: 15px;
+    margin-left: 0; /* Elimina el margen izquierdo individual */
   }
 
   #main-container{

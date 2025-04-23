@@ -31,8 +31,8 @@ onMounted(async () => {
 
 const actualizar = () => {
   isModalOpen.value = true;
-  //si esta en la pantalla de movil se cierra el menu al seleccionar una opcion
-  if (window.innerWidth<768) {
+  // Cierra el menú en móvil
+  if (window.innerWidth < 768) {
     menuActive.value = false;
   }
 }
